@@ -16,8 +16,9 @@
 #' @export
 new_AddiVortesFit <- function(posteriorTess, posteriorDim, 
                               posteriorSigma, posteriorPred,
-                              xCentres, xRanges, yCentre, yRange,
-                              inSampleRmse) {
+                              xCentres, xRanges, xScaled,
+                              yCentre, yRange,
+                              inSampleRmse, metric) {
   structure(
     list(
       posteriorTess = posteriorTess,
@@ -26,9 +27,11 @@ new_AddiVortesFit <- function(posteriorTess, posteriorDim,
       posteriorPred = posteriorPred,
       xCentres = xCentres,
       xRanges = xRanges,
+      xScaled = xScaled,
       yCentre = yCentre,
       yRange = yRange,
-      inSampleRmse = inSampleRmse
+      inSampleRmse = inSampleRmse,
+      metric = metric
     ),
     class = "AddiVortesFit"
   )
@@ -219,6 +222,7 @@ summary.AddiVortesFit <- function(object, ...) {
 #'   accounts only for uncertainty in the mean (similar to `lm`'s confidence interval).
 #'   The alternative `"prediction"` also includes the model's error variance,
 #'   producing wider intervals (similar to `lm`'s prediction interval).
+#' @param scaleX if TRUE (default), the covariates are scaled.
 #' @param showProgress Logical; if TRUE, a progress bar is shown during prediction.
 #' @param parallel Logical; if TRUE (default), predictions are computed in parallel.
 #' @param cores The number of CPU cores to use for parallel processing. If NULL (default), 
@@ -315,12 +319,17 @@ predict.AddiVortesFit <- function(object, newdata,
     return(NA_real_)
   }
   
-  # Scale new data
-  xNewScaled <- applyScaling_internal(
-    mat = newdata,
-    centres = object$xCentres,
-    ranges = object$xRanges
-  )
+  # Scale new data if required
+  if (object$xScaled) {
+    xNewScaled <- applyScaling_internal(
+      mat = newdata,
+      centres = object$xCentres,
+      ranges = object$xRanges
+    )
+  }
+  else {
+    xNewScaled <- newdata
+  }
   
   mTessellations <- length(posteriorTessSamples[[1]])
   nObs <- nrow(xNewScaled)
@@ -364,7 +373,7 @@ predict.AddiVortesFit <- function(object, newdata,
       
       # Get predictions for each tessellation in current posterior sample
       pred_list <- lapply(seq_len(mTessellations), function(j) {
-        NewTessIndexes <- cellIndices(xNewScaled, current_tess[[j]], current_dim[[j]])
+        NewTessIndexes <- cellIndices(xNewScaled, current_tess[[j]], current_dim[[j]], object$metric)
         current_pred[[j]][NewTessIndexes]
       })
       

@@ -17,14 +17,14 @@
 #'
 #' @keywords internal
 #' @noRd
-cellIndices <- function(x, tess, dim) {
+cellIndices <- function(x, tess, dim, metric = "Euclidean") {
   if (length(tess[, 1]) == 1) { # only 1 centre
     CellsForGivenTess <- rep(1, length(x[, 1]))
   } else { # multiple
     CellsForGivenTess <- knnx_index(tess, 
                                     matrix(x[, dim],
-                                           ncol = length(dim)
-                                    ), 1
+                                           ncol = length(dim)), 1,
+                                    metric
     )
   }
 } # Implicit return of CellsForGivenTess

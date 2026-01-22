@@ -30,7 +30,6 @@ scaleData_internal <- function(data) {
   } else if (!is.numeric(data) && is.null(dim(data))) {
     stop("'data' must be a numeric vector.")
   }
-
   # Check if it's vector-like (no dimensions) or matrix/df-like
   if (!is.matrix(data)) {
     # --- Handle Vector ---
@@ -38,12 +37,12 @@ scaleData_internal <- function(data) {
     maxV <- max(data, na.rm = TRUE)
     centre <- (maxV + minV) / 2
     rangeV <- maxV - minV
-
+  
     # Break if range is zero
     if (rangeV == 0) {
       stop("Range is zero. Cannot scale data.")
     }
-
+  
     # Scale the data
     scaledData <- (data - centre) / rangeV
     centres <- centre # Store single value
@@ -53,21 +52,21 @@ scaleData_internal <- function(data) {
     isDf <- is.data.frame(data)
     matWork <- as.matrix(data) # Work with matrix representation
     numCols <- ncol(matWork)
-
+  
     # Pre-allocate results
     scaledMatWork <- matrix(NA_real_, nrow = nrow(matWork), ncol = numCols)
     centres <- numeric(numCols) # Vector to store centres
     ranges <- numeric(numCols) # Vector to store ranges
-
+  
     originalColnames <- colnames(matWork) # Store original names
     if (is.null(originalColnames) && ncol(matWork) > 0) {
       originalColnames <- paste0("V", 1:ncol(matWork)) # Assign default if null
     }
-
+  
     for (i in 1:numCols) {
       colData <- matWork[, i]
       colName <- originalColnames[i]
-
+  
       # Check if column is numeric *before* scaling
       if (!is.numeric(colData)) {
         warning("Column ", i, " ('", colName, "') is not numeric. Returning original column data.", call. = FALSE)

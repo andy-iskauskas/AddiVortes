@@ -20,6 +20,7 @@
 #' @param LambdaRate The rate of the Poisson distribution for the number of centres.
 #' @param InitialSigma The method used to calculate the initial variance.
 #' @param thinning The thinning rate.
+#' @param scaleX if TRUE (default), the covariates are scaled.
 #' @param showProgress Logical; if TRUE, progress bars and messages are shown during fitting.
 #'
 #' @return An AddiVortesFit object containing the posterior samples of the
@@ -46,8 +47,19 @@ AddiVortes <- function(y, x, m = 200,
                        Omega = min(3, ncol(x)), 
                        LambdaRate = 25,
                        InitialSigma = "Linear",
-                       thinning = 1,
+                       thinning = 1, scaleX = TRUE,
+                       metric = "Euclidean",
                        showProgress = interactive()) {
+  #### Determining the metric to use -------------------------------------------
+  ## In the future, would like to allow for user-provided list(ranges, metric)
+  if (metric == "Euclidean") space <- list(ranges = NULL, metric = NULL)
+  if (metric == "Sphere") {
+    sphere_ranges <- list(theta = c(0, 2*pi), phi = c(0, pi))
+    sphere_metric <- function(p1, p2) {
+      sqrt(2-2*(cos(p1[1])*cos(p2[1])+sin(p1[1])*sin(p2[1])*cos(p1[2]-p2[2])))
+    }
+    space <- list(sphere_ranges, sphere_metric)
+  }
   #### Scaling x and y ---------------------------------------------------------
   yScalingResult <- scaleData_internal(y)
   yScaled <- yScalingResult$scaledData # Vector of values
@@ -58,7 +70,23 @@ AddiVortes <- function(y, x, m = 200,
   xScaled <- xScalingResult$scaledData # Matrix of values
   xCentres <- xScalingResult$centres # Vector of values
   xRanges <- xScalingResult$ranges # Vector of values
-  
+  #### Ensuring sigma is vectorised, and dealing with sigma NULL ---------------
+  if (is.null(sd)) {
+    if (scaleX) sd <- 0.8
+    else {
+      sd <- sapply(xRanges, function(r) uniroot(function(x) qnorm(0.75, 0, x) - r/2, c(0, r))$root)
+    }
+  }
+  if (length(sd) == 1)
+    sd <- rep(sd, nrow(x))
+  #### Handling unscaled data
+  if (!scaleX) {
+    xScaled <- x
+    mus <- xCentres
+  }
+  else {
+    mus <- rep(0, nrow(x))
+  }
   #### Check dimensions --------------------------------------------------------
   n <- length(y)
   p <- ncol(xScaled)
@@ -88,9 +116,15 @@ AddiVortes <- function(y, x, m = 200,
   dim <- sapply(1:m, function(ignoredIndex) {
     list(sample(1:length(x[1, ]), 1))
   })
-  tess <- sapply(1:m, function(ignoredIndex) {
-    list(matrix(rnorm(1, 0, sd)))
+  tess <- sapply(dim, function(i) {
+    list(matrix(rnorm(1, mus[i], sd[i])))
   })
+  if (!is.null(space$ranges)) {
+    for (i in seq_along(tess)) {
+      while (tess[[i]][1,1] > space$ranges[i][2]) tess[[i]][1,1] = tess[i][1]-space$ranges[i][2]
+      while (tess[[i]][1,1] < space$ranges[i][1]) tess[[i]][1,1] = tess[i][1]+space$ranges[i][2]
+    }
+  }
   
   #### Set-up MCMC -------------------------------------------------------------
   # Prepare some variables used in the backfitting algorithm.
@@ -163,7 +197,7 @@ AddiVortes <- function(y, x, m = 200,
   covariateIndices <- seq_len(NumCovariates)
   current_indices <- vector("list", m)
   for(k in 1:m) {
-    current_indices[[k]] <- cellIndices(xScaled, tess[[k]], dim[[k]])
+    current_indices[[k]] <- cellIndices(xScaled, tess[[k]], dim[[k]], metric)
   }
   
   # Initial message and progress bar setup
@@ -233,9 +267,11 @@ AddiVortes <- function(y, x, m = 200,
       newTessOutput <- proposeTessellation(
         tess[[j]],
         dim[[j]],
-        sd,
+        sd^2,
+        mus,
         covariateIndices,
-        NumCovariates
+        NumCovariates,
+        metric
       )
       tess_j_star <- newTessOutput[[1]]
       dim_j_star <- newTessOutput[[2]]
@@ -244,7 +280,7 @@ AddiVortes <- function(y, x, m = 200,
       # Retrieve old indices from cache
       indexes <- current_indices[[j]]
       # Calculate new indices for the proposal
-      indexesStar <- cellIndices(xScaled, tess_j_star, dim_j_star)
+      indexesStar <- cellIndices(xScaled, tess_j_star, dim_j_star, metric)
       
       residualsOutput <- calculateResiduals(
         y = yScaled,
@@ -356,8 +392,10 @@ AddiVortes <- function(y, x, m = 200,
     posteriorPred = outputPosteriorPred,
     xCentres = xCentres,
     xRanges = xRanges,
+    xScaled = scaleX,
     yCentre = yCentre,
     yRange = yRange,
-    inSampleRmse = sqrt(mean((y - meanYhat)^2))
+    inSampleRmse = sqrt(mean((y - meanYhat)^2)),
+    metric = metric
   )
 }

@@ -10,7 +10,7 @@
   type = c("response", "quantile"),
   quantiles = c(0.025, 0.975),
   interval = c("credible", "prediction"),
-  showProgress = TRUE,
+  showProgress = interactive(),
   parallel = TRUE,
   cores = NULL,
   ...
@@ -35,7 +35,7 @@ accounts only for uncertainty in the mean (similar to \code{lm}'s confidence int
 The alternative \code{"prediction"} also includes the model's error variance,
 producing wider intervals (similar to \code{lm}'s prediction interval).}
 
-\item{showProgress}{Logical; if TRUE (default), a progress bar is shown during prediction.}
+\item{showProgress}{Logical; if TRUE, a progress bar is shown during prediction.}
 
 \item{parallel}{Logical; if TRUE (default), predictions are computed in parallel.}
 

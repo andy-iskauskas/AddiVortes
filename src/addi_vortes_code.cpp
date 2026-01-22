@@ -26,12 +26,13 @@ extern "C" {
   // ---------------------------------------------------------------------------
   // This function implements k-nearest neighbors index search to replace FNN::knnx.index
   // The R wrapper function is `knnx.index`.
-  SEXP knnx_index_cpp(SEXP tess_sexp, SEXP query_sexp, SEXP k_sexp) {
+  SEXP knnx_index_cpp(SEXP tess_sexp, SEXP query_sexp, SEXP k_sexp, SEXP metric_sexp) {
     
     // --- Unpack arguments ---
     double* p_tess = REAL(tess_sexp);
     double* p_query = REAL(query_sexp);
     int k = INTEGER(k_sexp)[0];
+    std::string metric = CHAR(STRING_ELT(metric_sexp, 0));
     
     int tess_rows = Rf_nrows(tess_sexp);
     int tess_cols = Rf_ncols(tess_sexp);
@@ -61,9 +62,14 @@ extern "C" {
       
       for (int t = 0; t < tess_rows; ++t) {
         double dist_sq = 0.0;
-        for (int d = 0; d < tess_cols; ++d) {
-          double diff = p_query[q + d * query_rows] - p_tess[t + d * tess_rows];
-          dist_sq += diff * diff;
+        if (metric == "Sphere") {
+          dist_sq = 2 - 2*(cos(p_query[q])*cos(p_tess[t])+sin(p_query[q])*sin(p_tess[t])*cos(p_query[q+query_rows]-p_tess[t+tess_rows]));
+        }
+        else {
+          for (int d = 0; d < tess_cols; ++d) {
+            double diff = p_query[q + d * query_rows] - p_tess[t + d * tess_rows];
+            dist_sq += diff * diff;
+          }
         }
         distances[t] = std::make_pair(dist_sq, t + 1); // +1 for R 1-based indexing
       }
@@ -160,16 +166,26 @@ extern "C" {
   // This function proposes a new tessellation based on the current one,
   // modifying it according to a set of rules and a random number generator.
   // The R wrapper function is `proposeTessellation`.
-  SEXP propose_tessellation_cpp(SEXP tess_j_sexp, SEXP dim_j_sexp, SEXP var_sexp, SEXP num_cov_sexp) {
+  SEXP propose_tessellation_cpp(SEXP tess_j_sexp, SEXP dim_j_sexp, SEXP var_sexp, SEXP mu_sexp, SEXP num_cov_sexp, SEXP metric_sexp) {
     
     // --- Unpack arguments ---
     double* p_tess_j = REAL(tess_j_sexp);
     int* p_dim_j = INTEGER(dim_j_sexp);
-    double var = REAL(var_sexp)[0];
+    double* var = REAL(var_sexp);
+    double* mus = REAL(mu_sexp);
     int numCovariates = INTEGER(num_cov_sexp)[0];
+    std::string metric = CHAR(STRING_ELT(metric_sexp, 0));
     
     int tess_j_rows = Rf_nrows(tess_j_sexp);
     int d_j_length = Rf_length(dim_j_sexp);
+
+    std::vector<double> mins;
+    std::vector<double> maxs;
+
+    if (metric == "Sphere") {
+      mins = {0,0};
+      maxs = {2*M_PI, M_PI};
+    }
     
     // Get R's random number generator state
     GetRNGstate();
@@ -185,19 +201,28 @@ extern "C" {
     // Add Dimension (AD): ensure we don't try to add a dimension when all covariates are already selected
     if ((p < 0.2 && d_j_length != numCovariates) || (d_j_length == 1 && d_j_length != numCovariates && p < 0.4)) {
       modification = "AD";
+      //// This is not working...because the code assumed scaled data, the ordering of rows doesn't matter: it does for us now
       int new_dim;
       do {
         new_dim = floor(unif_rand() * numCovariates) + 1;
       } while (in_vector(new_dim, dim_j_star));
       
       dim_j_star.push_back(new_dim);
-      
       std::vector<double> new_tess(tess_j_rows * (d_j_length + 1));
       for (int r = 0; r < tess_j_rows; ++r) {
         for (int c = 0; c < d_j_length; ++c) {
           new_tess[r + c * tess_j_rows] = tess_j_star[r + c * tess_j_rows];
         }
-        new_tess[r + d_j_length * tess_j_rows] = norm_rand() * sqrt(var);
+        double new_val = mus[new_dim] + norm_rand()*sqrt(var[new_dim]);
+        // if (metric == "Sphere") {
+        //   while (new_val > maxs[new_dim]) {
+        //     new_val -= maxs[new_dim];
+        //   }
+        //   while (new_val < mins[new_dim]) {
+        //     new_val += maxs[new_dim];
+        //   }
+        // }
+        new_tess[r + d_j_length * tess_j_rows] = new_val;
       }
       tess_j_star = new_tess;
       
@@ -221,7 +246,16 @@ extern "C" {
     } else if (p < 0.6 || (p < 0.8 && tess_j_rows == 1)) {
       modification = "AC";
       for (int i = 0; i < d_j_length; ++i) {
-        tess_j_star.insert(tess_j_star.begin() + (i * (tess_j_rows + 1)) + tess_j_rows, norm_rand() * sqrt(var));
+        double new_val = mus[i] + norm_rand()*sqrt(var[i]);
+        if (metric == "Sphere") {
+          while (new_val > maxs[i]) {
+            new_val -= maxs[i];
+          }
+          while (new_val < mins[i]) {
+            new_val += maxs[i];
+          }
+        }
+        tess_j_star.insert(tess_j_star.begin() + (i * (tess_j_rows + 1)) + tess_j_rows, new_val);
       }
       
     } else if (p < 0.8 && tess_j_rows > 1) {
@@ -241,11 +275,21 @@ extern "C" {
     } else if (p < 0.9 || d_j_length == numCovariates) {
       int centre_to_change_idx = floor(unif_rand() * tess_j_rows);
       for (int c = 0; c < d_j_length; ++c) {
-        tess_j_star[centre_to_change_idx + c * tess_j_rows] = norm_rand() * sqrt(var);
+        double new_val = mus[c] + norm_rand()*sqrt(var[c]);
+        if (metric == "Sphere") {
+          while (new_val > maxs[c]) {
+            new_val -= maxs[c];
+          }
+          while (new_val < mins[c]) {
+            new_val += maxs[c];
+          }
+        }
+        tess_j_star[centre_to_change_idx + c * tess_j_rows] = new_val;
       }
       
     } else {
       modification = "Swap";
+      //// I don't think this is working as it should either, for the same reason as "AD"
       int dim_to_change_idx = floor(unif_rand() * d_j_length);
       int new_dim;
       do {
@@ -254,7 +298,16 @@ extern "C" {
       
       dim_j_star[dim_to_change_idx] = new_dim;
       for (int r = 0; r < tess_j_rows; ++r) {
-        tess_j_star[r + dim_to_change_idx * tess_j_rows] = norm_rand() * sqrt(var);
+        double new_val = mus[dim_to_change_idx] + norm_rand()*sqrt(var[dim_to_change_idx]);
+        if (metric == "Sphere") {
+          while (new_val > maxs[dim_to_change_idx]) {
+            new_val -= maxs[dim_to_change_idx];
+          }
+          while (new_val < mins[dim_to_change_idx]) {
+            new_val += maxs[dim_to_change_idx];
+          }
+        }
+        tess_j_star[r + dim_to_change_idx * tess_j_rows] = new_val;
       }
     }
     

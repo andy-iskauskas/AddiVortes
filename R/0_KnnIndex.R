@@ -14,7 +14,7 @@
 #'
 #' @keywords internal
 #' @noRd
-knnx_index <- function(data, query, k = 1) {
+knnx_index <- function(data, query, k = 1, metric = "Euclidean") {
   # Input validation
   if (!is.matrix(data)) data <- as.matrix(data)
   if (!is.matrix(query)) query <- as.matrix(query)
@@ -26,7 +26,7 @@ knnx_index <- function(data, query, k = 1) {
   }
   
   # Call C++ implementation
-  result <- .Call("knnx_index_cpp", data, query, as.integer(k))
+  result <- .Call("knnx_index_cpp", data, query, as.integer(k), metric)
   
   # For k=1, return as vector (to match FNN::knnx.index behavior)
   if (k == 1) {

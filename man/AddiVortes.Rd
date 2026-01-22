@@ -16,9 +16,10 @@ AddiVortes(
   sd = 0.8,
   Omega = min(3, ncol(x)),
   LambdaRate = 25,
-  IntialSigma = "Linear",
+  InitialSigma = "Linear",
   thinning = 1,
-  showProgress = TRUE
+  scaleX = TRUE,
+  showProgress = interactive()
 )
 }
 \arguments{
@@ -44,11 +45,13 @@ AddiVortes(
 
 \item{LambdaRate}{The rate of the Poisson distribution for the number of centres.}
 
-\item{IntialSigma}{The method used to calculate the initial variance.}
+\item{InitialSigma}{The method used to calculate the initial variance.}
 
 \item{thinning}{The thinning rate.}
 
-\item{showProgress}{Logical; if TRUE (default), progress bars and messages are shown during fitting.}
+\item{scaleX}{if TRUE (default), the covariates are scaled}
+
+\item{showProgress}{Logical; if TRUE, progress bars and messages are shown during fitting.}
 }
 \value{
 An AddiVortesFit object containing the posterior samples of the
