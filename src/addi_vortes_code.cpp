@@ -26,13 +26,16 @@ extern "C" {
   // ---------------------------------------------------------------------------
   // This function implements k-nearest neighbors index search to replace FNN::knnx.index
   // The R wrapper function is `knnx.index`.
-  SEXP knnx_index_cpp(SEXP tess_sexp, SEXP query_sexp, SEXP k_sexp, SEXP metric_sexp) {
+  SEXP knnx_index_cpp(SEXP tess_sexp, SEXP query_sexp, SEXP k_sexp, SEXP dim_sexp, SEXP metric_sexp) {
     
     // --- Unpack arguments ---
     double* p_tess = REAL(tess_sexp);
     double* p_query = REAL(query_sexp);
     int k = INTEGER(k_sexp)[0];
+    int* dim_p = INTEGER(dim_sexp);
     std::string metric = CHAR(STRING_ELT(metric_sexp, 0));
+
+    std::vector<int> dim_p_temp(dim_p, dim_p + Rf_length(dim_sexp));
     
     int tess_rows = Rf_nrows(tess_sexp);
     int tess_cols = Rf_ncols(tess_sexp);
@@ -63,14 +66,27 @@ extern "C" {
       for (int t = 0; t < tess_rows; ++t) {
         double dist_sq = 0.0;
         if (metric == "Sphere") {
-          dist_sq = 2 - 2*(cos(p_query[q])*cos(p_tess[t])+sin(p_query[q])*sin(p_tess[t])*cos(p_query[q+query_rows]-p_tess[t+tess_rows]));
+          dist_sq += 2;
+          if (!in_vector(1, dim_p_temp)) {
+            dist_sq -= 2 * (pow(cos(p_query[q]),2)+pow(sin(p_query[q]),2)*cos(p_query[q+query_rows]-p_tess[t+tess_rows]));
+          }
+          else if (!in_vector(2, dim_p_temp)) {
+            dist_sq -= 2 * cos(p_query[q]-p_tess[t]);
+          }
+          else {
+            dist_sq -= 2 * (cos(p_query[q])*cos(p_tess[t])+sin(p_query[q])*sin(p_tess[t])*cos(p_query[q+query_rows]-p_tess[t+tess_rows]));
+          }
         }
         else {
           for (int d = 0; d < tess_cols; ++d) {
-            double diff = p_query[q + d * query_rows] - p_tess[t + d * tess_rows];
+            double diff = 0;
+            if (in_vector(d, dim_p_temp)) {
+              diff = p_query[q + d * query_rows] - p_tess[t + d * tess_rows];
+            }
             dist_sq += diff * diff;
           }
         }
+        //Rprintf("%f \n", dist_sq);
         distances[t] = std::make_pair(dist_sq, t + 1); // +1 for R 1-based indexing
       }
       
@@ -201,7 +217,6 @@ extern "C" {
     // Add Dimension (AD): ensure we don't try to add a dimension when all covariates are already selected
     if ((p < 0.2 && d_j_length != numCovariates) || (d_j_length == 1 && d_j_length != numCovariates && p < 0.4)) {
       modification = "AD";
-      //// This is not working...because the code assumed scaled data, the ordering of rows doesn't matter: it does for us now
       int new_dim;
       do {
         new_dim = floor(unif_rand() * numCovariates) + 1;
@@ -213,15 +228,15 @@ extern "C" {
         for (int c = 0; c < d_j_length; ++c) {
           new_tess[r + c * tess_j_rows] = tess_j_star[r + c * tess_j_rows];
         }
-        double new_val = mus[new_dim] + norm_rand()*sqrt(var[new_dim]);
-        // if (metric == "Sphere") {
-        //   while (new_val > maxs[new_dim]) {
-        //     new_val -= maxs[new_dim];
-        //   }
-        //   while (new_val < mins[new_dim]) {
-        //     new_val += maxs[new_dim];
-        //   }
-        // }
+        double new_val = mus[new_dim-1] + norm_rand()*sqrt(var[new_dim-1]);
+        if (metric == "Sphere") {
+          while (new_val > maxs[new_dim-1]) {
+            new_val -= maxs[new_dim-1];
+          }
+          while (new_val < mins[new_dim-1]) {
+            new_val += maxs[new_dim-1];
+          }
+        }
         new_tess[r + d_j_length * tess_j_rows] = new_val;
       }
       tess_j_star = new_tess;

@@ -44,6 +44,8 @@ it defaults to one less than the total number of available cores.}
 
 \item{...}{Further arguments passed to or from other methods (currently
 unused).}
+
+\item{scaleX}{if TRUE (default), the covariates are scaled.}
 }
 \value{
 If \code{type = "response"}, a numeric vector of mean predictions.

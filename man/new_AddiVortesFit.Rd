@@ -11,9 +11,11 @@ new_AddiVortesFit(
   posteriorPred,
   xCentres,
   xRanges,
+  xScaled,
   yCentre,
   yRange,
-  inSampleRmse
+  inSampleRmse,
+  metric
 )
 }
 \arguments{

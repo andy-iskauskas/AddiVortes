@@ -370,7 +370,6 @@ predict.AddiVortesFit <- function(object, newdata,
       current_tess <- posteriorTessSamples[[sIdx]]
       current_dim  <- posteriorDimSamples[[sIdx]]
       current_pred <- posteriorPredSamples[[sIdx]]
-      
       # Get predictions for each tessellation in current posterior sample
       pred_list <- lapply(seq_len(mTessellations), function(j) {
         NewTessIndexes <- cellIndices(xNewScaled, current_tess[[j]], current_dim[[j]], object$metric)

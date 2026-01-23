@@ -21,9 +21,16 @@ cellIndices <- function(x, tess, dim, metric = "Euclidean") {
   if (length(tess[, 1]) == 1) { # only 1 centre
     CellsForGivenTess <- rep(1, length(x[, 1]))
   } else { # multiple
+    if (ncol(tess) != ncol(x)) {
+      new_tess <- matrix(0, nrow = nrow(tess), ncol = ncol(x))
+      for (i in seq_along(dim)) {
+        new_tess[,dim[i]] <- tess[,i];
+      }
+      tess <- new_tess
+    }
     CellsForGivenTess <- knnx_index(tess, 
-                                    matrix(x[, dim],
-                                           ncol = length(dim)), 1,
+                                    x, 1,
+                                    dim,
                                     metric
     )
   }

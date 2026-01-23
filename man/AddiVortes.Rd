@@ -19,6 +19,7 @@ AddiVortes(
   InitialSigma = "Linear",
   thinning = 1,
   scaleX = TRUE,
+  metric = "Euclidean",
   showProgress = interactive()
 )
 }
@@ -49,7 +50,7 @@ AddiVortes(
 
 \item{thinning}{The thinning rate.}
 
-\item{scaleX}{if TRUE (default), the covariates are scaled}
+\item{scaleX}{if TRUE (default), the covariates are scaled.}
 
 \item{showProgress}{Logical; if TRUE, progress bars and messages are shown during fitting.}
 }
