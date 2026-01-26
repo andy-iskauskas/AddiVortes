@@ -54,7 +54,7 @@ AddiVortes <- function(y, x, m = 200,
   ## In the future, would like to allow for user-provided list(ranges, metric)
   if (metric == "Euclidean") space <- list(ranges = NULL, metric = NULL)
   if (metric == "Sphere") {
-    sphere_ranges <- list(theta = c(0, 2*pi), phi = c(0, pi))
+    sphere_ranges <- list(theta = c(-pi, pi), phi = c(-pi/2, pi/2))
     sphere_metric <- function(p1, p2) {
       sqrt(2-2*(cos(p1[1])*cos(p2[1])+sin(p1[1])*sin(p2[1])*cos(p1[2]-p2[2])))
     }

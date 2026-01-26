@@ -66,16 +66,21 @@ extern "C" {
       for (int t = 0; t < tess_rows; ++t) {
         double dist_sq = 0.0;
         if (metric == "Sphere") {
-          dist_sq += 2;
-          if (!in_vector(1, dim_p_temp)) {
-            dist_sq -= 2 * (pow(cos(p_query[q]),2)+pow(sin(p_query[q]),2)*cos(p_query[q+query_rows]-p_tess[t+tess_rows]));
+          double deltheta = 0.0;
+          double phi1 = 0.0;
+          double phi2 = 0.0;
+          if (in_vector(1, dim_p_temp)) {
+            deltheta = abs(p_query[q]-p_tess[t]);
           }
-          else if (!in_vector(2, dim_p_temp)) {
-            dist_sq -= 2 * cos(p_query[q]-p_tess[t]);
+          if (in_vector(2, dim_p_temp)) {
+            phi1 = p_query[q+query_rows];
+            phi2 = p_tess[t+tess_rows];
           }
           else {
-            dist_sq -= 2 * (cos(p_query[q])*cos(p_tess[t])+sin(p_query[q])*sin(p_tess[t])*cos(p_query[q+query_rows]-p_tess[t+tess_rows]));
+            phi1 = p_query[q+query_rows];
+            phi2 = p_query[q+query_rows];
           }
+          dist_sq = pow(acos(sin(phi1)*sin(phi2)+cos(phi1)*cos(phi2)*cos(deltheta)),2);
         }
         else {
           for (int d = 0; d < tess_cols; ++d) {
@@ -199,8 +204,8 @@ extern "C" {
     std::vector<double> maxs;
 
     if (metric == "Sphere") {
-      mins = {0,0};
-      maxs = {2*M_PI, M_PI};
+      mins = {-1*M_PI,-1*M_PI/2};
+      maxs = {M_PI, M_PI/2};
     }
     
     // Get R's random number generator state
@@ -304,7 +309,6 @@ extern "C" {
       
     } else {
       modification = "Swap";
-      //// I don't think this is working as it should either, for the same reason as "AD"
       int dim_to_change_idx = floor(unif_rand() * d_j_length);
       int new_dim;
       do {
