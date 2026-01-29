@@ -27,12 +27,18 @@ extern "C" {
   // ---------------------------------------------------------------------------
   // A C function that acts as a test bed to speak to AddiVortes.
   //
-  SEXP test_func_cpp(SEXP arg) {
-    int errorOccurred;
+  SEXP test_func_cpp(SEXP func) {
+    if (!Rf_isFunction(func)) {
+      Rf_error("Expected a function.");
+    }
+    SEXP arg1, arg2;
+    PROTECT(arg1 = Rf_ScalarReal(2.0));
+    PROTECT(arg2 = Rf_ScalarReal(3.5));
+    SEXP call;
+    PROTECT(call = Rf_lang3(func, arg1, arg2));
     SEXP result;
-    PROTECT(result = Rf_allocSExp(REALSXP));
-    result = R_tryEval(arg, R_GlobalEnv, &errorOccurred);
-    UNPROTECT(1);
+    PROTECT(result = Rf_eval(call, R_GlobalEnv));
+    UNPROTECT(4);
     return result;
   }
   
