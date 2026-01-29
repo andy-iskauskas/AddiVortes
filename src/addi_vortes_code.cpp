@@ -32,8 +32,12 @@ extern "C" {
       Rf_error("Expected a function.");
     }
     SEXP arg1, arg2;
-    PROTECT(arg1 = Rf_ScalarReal(2.0));
-    PROTECT(arg2 = Rf_ScalarReal(3.5));
+    PROTECT(arg1 = Rf_allocVector(REALSXP, 2));
+    PROTECT(arg2 = Rf_allocVector(REALSXP, 2));
+    REAL(arg1)[0] = 1.0;
+    REAL(arg1)[1] = 2.0;
+    REAL(arg2)[0] = -1.0;
+    REAL(arg2)[1] = 3.0;
     SEXP call;
     PROTECT(call = Rf_lang3(func, arg1, arg2));
     SEXP result;
