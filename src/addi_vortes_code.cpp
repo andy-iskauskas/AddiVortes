@@ -20,6 +20,21 @@ bool in_vector(int value, const std::vector<int>& vec) {
 }
 
 extern "C" {
+
+
+  // ---------------------------------------------------------------------------
+  // -1. Test code
+  // ---------------------------------------------------------------------------
+  // A C function that acts as a test bed to speak to AddiVortes.
+  //
+  SEXP test_func_cpp(SEXP arg) {
+    int errorOccurred;
+    SEXP result;
+    PROTECT(result = Rf_allocSExp(REALSXP));
+    result = R_tryEval(arg, R_GlobalEnv, &errorOccurred);
+    UNPROTECT(1);
+    return result;
+  }
   
   // ---------------------------------------------------------------------------
   // 0. knnx_index_cpp
@@ -106,8 +121,7 @@ extern "C" {
     
     UNPROTECT(1);
     return result;
-  }
-  
+  } 
   
   // ---------------------------------------------------------------------------
   // 1. calculate_residuals_cpp
