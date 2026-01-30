@@ -17,7 +17,7 @@
 #'
 #' @keywords internal
 #' @noRd
-cellIndices <- function(x, tess, dim, metric = "Euclidean") {
+cellIndices <- function(x, tess, dim, metric = function(x,y) sum((x-y)^2)) {
   if (length(tess[, 1]) == 1) { # only 1 centre
     CellsForGivenTess <- rep(1, length(x[, 1]))
   } else { # multiple

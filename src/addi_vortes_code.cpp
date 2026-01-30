@@ -51,14 +51,19 @@ extern "C" {
   // ---------------------------------------------------------------------------
   // This function implements k-nearest neighbors index search to replace FNN::knnx.index
   // The R wrapper function is `knnx.index`.
-  SEXP knnx_index_cpp(SEXP tess_sexp, SEXP query_sexp, SEXP k_sexp, SEXP dim_sexp, SEXP metric_sexp) {
+  SEXP knnx_index_cpp(SEXP tess_sexp, SEXP query_sexp, SEXP k_sexp, SEXP dim_sexp, SEXP dist_sexp) {
     
     // --- Unpack arguments ---
     double* p_tess = REAL(tess_sexp);
     double* p_query = REAL(query_sexp);
     int k = INTEGER(k_sexp)[0];
     int* dim_p = INTEGER(dim_sexp);
-    std::string metric = CHAR(STRING_ELT(metric_sexp, 0));
+
+    // --- Set up distance function ---
+    // if (!Rf_isFunction(dist_sexp)) {
+    //   Rf_error("Expected a distance function.");
+    // }
+    std::string metric = CHAR(STRING_ELT(dist_sexp, 0));
 
     std::vector<int> dim_p_temp(dim_p, dim_p + Rf_length(dim_sexp));
     
@@ -78,7 +83,7 @@ extern "C" {
     }
     
     // --- Create result matrix ---
-    SEXP result;
+    SEXP result, call;
     PROTECT(result = Rf_allocMatrix(INTSXP, query_rows, k));
     int* p_result = INTEGER(result);
     
@@ -87,9 +92,33 @@ extern "C" {
       
       // Calculate distances to all tessellation points
       std::vector<std::pair<double, int>> distances(tess_rows);
+
+      
+      // SEXP q_pt = Rf_allocVector(REALSXP, query_cols);
+      // double* q_point = REAL(q_pt);
+      // //std::vector<double> q_point(query_cols);
+      // for (int i = 0; i < query_cols; ++i) {
+      //   q_point[i] = p_query[q + i * query_rows];
+      // }
+      // for (int t = 0; t < tess_rows; ++t) {
+      //   //std::vector<double> t_point(tess_cols);
+      //   SEXP t_pt = Rf_allocVector(REALSXP, tess_cols);
+      //   double* t_point = REAL(t_pt);
+      //   for (int i = 0; i < tess_cols; ++i) {
+      //     if (!in_vector(i+1, dim_p_temp)) {
+      //       t_point[i] = p_query[q + i * query_rows];
+      //     }
+      //     else {
+      //       t_point[i] = p_tess[t + i * tess_rows];
+      //     }
+      //     call = Rf_lang3(dist_sexp, q_pt, t_pt);
+      //     double dval = REAL(Rf_eval(call, R_GlobalEnv))[0];
+      //     distances[t] = std::make_pair(dval, t+1);
+      //   }
+      // }
       
       for (int t = 0; t < tess_rows; ++t) {
-        double dist_sq = 0.0;
+        double dval = 0.0;
         if (metric == "Sphere") {
           double deltheta = 0.0;
           double phi1 = 0.0;
@@ -105,7 +134,7 @@ extern "C" {
             phi1 = p_query[q+query_rows];
             phi2 = p_query[q+query_rows];
           }
-          dist_sq = pow(acos(sin(phi1)*sin(phi2)+cos(phi1)*cos(phi2)*cos(deltheta)),2);
+          dval = pow(acos(sin(phi1)*sin(phi2)+cos(phi1)*cos(phi2)*cos(deltheta)),2);
         }
         else {
           for (int d = 0; d < tess_cols; ++d) {
@@ -113,11 +142,11 @@ extern "C" {
             if (in_vector(d, dim_p_temp)) {
               diff = p_query[q + d * query_rows] - p_tess[t + d * tess_rows];
             }
-            dist_sq += diff * diff;
+            dval += diff * diff;
           }
         }
-        //Rprintf("%f \n", dist_sq);
-        distances[t] = std::make_pair(dist_sq, t + 1); // +1 for R 1-based indexing
+        // Rprintf("%f \n", dist_sq);
+        distances[t] = std::make_pair(dval, t + 1); // +1 for R 1-based indexing
       }
       
       // Sort by squared distance to get k nearest neighbors

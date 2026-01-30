@@ -4,7 +4,7 @@
 \alias{test_func}
 \title{Testing Stuff}
 \usage{
-test_func(f, args)
+test_func(f)
 }
 \description{
 Just a function to test changes.

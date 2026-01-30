@@ -52,13 +52,18 @@ AddiVortes <- function(y, x, m = 200,
                        showProgress = interactive()) {
   #### Determining the metric to use -------------------------------------------
   ## In the future, would like to allow for user-provided list(ranges, metric)
-  if (metric == "Euclidean") space <- list(ranges = NULL, metric = NULL)
+  if (metric == "Euclidean") {
+    #space <- list(ranges = NULL, metric = function(x,y) sum((x-y)^2))
+    space <- list(ranges = NULL, metric = metric)
+  }
   if (metric == "Sphere") {
     sphere_ranges <- list(theta = c(-pi, pi), phi = c(-pi/2, pi/2))
-    sphere_metric <- function(p1, p2) {
-      sqrt(2-2*(cos(p1[1])*cos(p2[1])+sin(p1[1])*sin(p2[1])*cos(p1[2]-p2[2])))
+    sphere_metric <- function(x, y) {
+      tryCatch(acos(sin(x[2])*sin(y[2])+cos(x[2])*cos(y[2])*cos(abs(x[1]-y[1])))^2,
+               warning = function(w) return(0))
     }
-    space <- list(sphere_ranges, sphere_metric)
+    space <- list(ranges = sphere_ranges, metric = metric)
+    #space <- list(ranges = sphere_ranges, metric = sphere_metric)
   }
   #### Scaling x and y ---------------------------------------------------------
   yScalingResult <- scaleData_internal(y)
@@ -121,8 +126,10 @@ AddiVortes <- function(y, x, m = 200,
   })
   if (!is.null(space$ranges)) {
     for (i in seq_along(tess)) {
-      while (tess[[i]][1,1] > space$ranges[i][2]) tess[[i]][1,1] = tess[i][1]-space$ranges[i][2]
-      while (tess[[i]][1,1] < space$ranges[i][1]) tess[[i]][1,1] = tess[i][1]+space$ranges[i][2]
+      while (tess[[i]][1,1] > space$ranges[[dim[[i]]]][2])
+        tess[[i]][1,1] = tess[[i]][1,1]-space$ranges[[dim[[i]]]][2]
+      while (tess[[i]][1,1] < space$ranges[[dim[[i]]]][1])
+        tess[[i]][1,1] = tess[[i]][1,1]+space$ranges[[dim[[i]]]][2]
     }
   }
   
@@ -197,7 +204,7 @@ AddiVortes <- function(y, x, m = 200,
   covariateIndices <- seq_len(NumCovariates)
   current_indices <- vector("list", m)
   for(k in 1:m) {
-    current_indices[[k]] <- cellIndices(xScaled, tess[[k]], dim[[k]], metric)
+    current_indices[[k]] <- cellIndices(xScaled, tess[[k]], dim[[k]], space$metric)
   }
   
   # Initial message and progress bar setup
@@ -280,7 +287,7 @@ AddiVortes <- function(y, x, m = 200,
       # Retrieve old indices from cache
       indexes <- current_indices[[j]]
       # Calculate new indices for the proposal
-      indexesStar <- cellIndices(xScaled, tess_j_star, dim_j_star, metric)
+      indexesStar <- cellIndices(xScaled, tess_j_star, dim_j_star, space$metric)
       
       residualsOutput <- calculateResiduals(
         y = yScaled,
@@ -396,6 +403,6 @@ AddiVortes <- function(y, x, m = 200,
     yCentre = yCentre,
     yRange = yRange,
     inSampleRmse = sqrt(mean((y - meanYhat)^2)),
-    metric = metric
+    metric = space$metric
   )
 }
