@@ -87,11 +87,10 @@ test_that("print.AddiVortes handles empty posterior samples", {
 test_that("summary.AddiVortes requires AddiVortes object", {
   # Test that summary fails with non-AddiVortes object
   not_addivortes <- list(a = 1, b = 2)
-  class(not_addivortes) <- "list"
   
   expect_error(
     summary.AddiVortes(not_addivortes),
-    "must be an object of class 'AddiVortes'"
+    "`object` must be an object of class 'AddiVortes'"
   )
 })
 
