@@ -1,5 +1,10 @@
 # AddiVortes News
 
+## AddiVortes 0.4.12
+
+* Added comprehensive test suite for AddiVortes class methods syntax validation.
+* Tests cover input validation and error handling for all S3 methods (print, summary, predict, plot).
+
 ## AddiVortes 0.4.11
 
 * Renamed class `AddiVortesFit` to `AddiVortes` to maintain consistency with the package name.
