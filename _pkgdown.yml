@@ -31,14 +31,14 @@ reference:
     contents:
     - AddiVortes
   - title: "S3 Methods"
-    desc: "Methods for AddiVortesFit objects"
+    desc: "Methods for AddiVortes objects"
     contents:
-    - plot.AddiVortesFit
-    - predict.AddiVortesFit
-    - print.AddiVortesFit
-    - summary.AddiVortesFit
+    - plot.AddiVortes
+    - predict.AddiVortes
+    - print.AddiVortes
+    - summary.AddiVortes
   - title: "Utilities"
     desc: "Helper functions and constructors"
     contents:
-    - new_AddiVortesFit
+    - new_AddiVortes
 

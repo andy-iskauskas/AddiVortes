@@ -51,7 +51,7 @@ AddiVortes(
 \item{showProgress}{Logical; if TRUE (default), progress bars and messages are shown during fitting.}
 }
 \value{
-An AddiVortesFit object containing the posterior samples of the
+An AddiVortes object containing the posterior samples of the
 tessellations, dimensions and predictions.
 }
 \description{

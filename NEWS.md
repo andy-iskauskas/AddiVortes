@@ -1,5 +1,11 @@
 # AddiVortes News
 
+## AddiVortes 0.4.11
+
+* Renamed class `AddiVortesFit` to `AddiVortes` to maintain consistency with the package name.
+* Updated all S3 methods (print, summary, predict, plot) to use the new class name.
+* Updated constructor function from `new_AddiVortesFit` to `new_AddiVortes`.
+
 ## AddiVortes 0.4.10
 
 * Fixed variance/standard deviation mismatch in tessellation proposal step.
