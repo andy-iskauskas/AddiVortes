@@ -22,7 +22,7 @@
 #' @param thinning The thinning rate.
 #' @param showProgress Logical; if TRUE, progress bars and messages are shown during fitting.
 #'
-#' @return An AddiVortesFit object containing the posterior samples of the
+#' @return An AddiVortes object containing the posterior samples of the
 #' tessellations, dimensions and predictions.
 #'
 #' @examples
@@ -348,8 +348,8 @@ AddiVortes <- function(y, x, m = 200,
   meanYhat <- (rowSums(predictionMatrix) / (posteriorSamples)) * yRange +
     yCentre
   
-  # Create and return the AddiVortesFit object
-  new_AddiVortesFit(
+  # Create and return the AddiVortes object
+  new_AddiVortes(
     posteriorTess = outputPosteriorTess,
     posteriorDim = outputPosteriorDim,
     posteriorSigma = outputPosteriorSigma,

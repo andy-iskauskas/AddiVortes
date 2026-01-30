@@ -1,6 +1,6 @@
-#' @title Create an AddiVortesFit Object
+#' @title Create an AddiVortes Object
 #'
-#' @description A constructor for the AddiVortesFit class.
+#' @description A constructor for the AddiVortes class.
 #'
 #' @param posteriorTess A list of the posterior samples of the tessellations.
 #' @param posteriorDim A list of the posterior samples of the dimensions.
@@ -12,9 +12,9 @@
 #' @param yRange The range of the output values.
 #' @param inSampleRmse The in-sample RMSE.
 #'
-#' @return An object of class AddiVortesFit.
+#' @return An object of class AddiVortes.
 #' @export
-new_AddiVortesFit <- function(posteriorTess, posteriorDim, 
+new_AddiVortes <- function(posteriorTess, posteriorDim, 
                               posteriorSigma, posteriorPred,
                               xCentres, xRanges, yCentre, yRange,
                               inSampleRmse) {
@@ -30,18 +30,18 @@ new_AddiVortesFit <- function(posteriorTess, posteriorDim,
       yRange = yRange,
       inSampleRmse = inSampleRmse
     ),
-    class = "AddiVortesFit"
+    class = "AddiVortes"
   )
 }
 
-#' @title Print Method for AddiVortesFit
+#' @title Print Method for AddiVortes
 #'
 #' @description
-#' Prints a summary of a fitted `AddiVortesFit` object, providing information
+#' Prints a summary of a fitted `AddiVortes` object, providing information
 #' about the model structure, dimensions, and fit quality similar to the
 #' output of a linear model summary.
 #'
-#' @param x An object of class `AddiVortesFit`, typically the result of a
+#' @param x An object of class `AddiVortes`, typically the result of a
 #'   call to `AddiVortes()`.
 #' @param ... Further arguments passed to or from other methods (currently 
 #' unused).
@@ -59,11 +59,11 @@ new_AddiVortesFit <- function(posteriorTess, posteriorDim,
 #' - Covariate scaling information
 #'
 #' @export
-#' @method print AddiVortesFit
-print.AddiVortesFit <- function(x, ...) {
+#' @method print AddiVortes
+print.AddiVortes <- function(x, ...) {
   # --- Input Validation ---
-  if (!inherits(x, "AddiVortesFit")) {
-    stop("`x` must be an object of class 'AddiVortesFit'.")
+  if (!inherits(x, "AddiVortes")) {
+    stop("`x` must be an object of class 'AddiVortes'.")
   }
   
   cat("AddiVortes Model\n")
@@ -140,13 +140,13 @@ print.AddiVortesFit <- function(x, ...) {
   invisible(x)
 }
 
-#' @title Summary Method for AddiVortesFit
+#' @title Summary Method for AddiVortes
 #'
 #' @description
-#' Provides a detailed summary of a fitted `AddiVortesFit` object, including
+#' Provides a detailed summary of a fitted `AddiVortes` object, including
 #' more comprehensive information than the print method.
 #'
-#' @param object An object of class `AddiVortesFit`, typically the result of a
+#' @param object An object of class `AddiVortes`, typically the result of a
 #'   call to `AddiVortes()`.
 #' @param ... Further arguments passed to or from other methods (currently 
 #' unused).
@@ -157,8 +157,8 @@ print.AddiVortesFit <- function(x, ...) {
 #'
 #' @importFrom stats sd
 #' @export
-#' @method summary AddiVortesFit
-summary.AddiVortesFit <- function(object, ...) {
+#' @method summary AddiVortes
+summary.AddiVortes <- function(object, ...) {
   # Call the print method first
   print(object)
   
@@ -199,14 +199,14 @@ summary.AddiVortesFit <- function(object, ...) {
   invisible(object)
 }
 
-#' @title Predict Method for AddiVortesFit
+#' @title Predict Method for AddiVortes
 #'
 #' @description
-#' Predicts outcomes for new data using a fitted `AddiVortesFit` model object.
+#' Predicts outcomes for new data using a fitted `AddiVortes` model object.
 #' It can return mean predictions, quantiles and optionally calculate the
 #' Root Mean Squared Error (RMSE) if true outcomes are provided.
 #'
-#' @param object An object of class `AddiVortesFit`, typically the result of a
+#' @param object An object of class `AddiVortes`, typically the result of a
 #'   call to `AddiVortes()`.
 #' @param newdata A matrix of covariates for the new test set. The number of
 #'   columns must match the original training data.
@@ -274,8 +274,8 @@ summary.AddiVortesFit <- function(object, ...) {
 #' @importFrom pbapply pblapply
 #' @importFrom stats rnorm
 #' @export
-#' @method predict AddiVortesFit
-predict.AddiVortesFit <- function(object, newdata,
+#' @method predict AddiVortes
+predict.AddiVortes <- function(object, newdata,
                                   type = c("response", "quantile"),
                                   quantiles = c(0.025, 0.975),
                                   interval = c("credible", "prediction"),
@@ -287,8 +287,8 @@ predict.AddiVortesFit <- function(object, newdata,
   interval <- match.arg(interval)
   
   # --- Input validation ---
-  if (!inherits(object, "AddiVortesFit"))
-    stop("`object` must be of class 'AddiVortesFit'.")
+  if (!inherits(object, "AddiVortes"))
+    stop("`object` must be of class 'AddiVortes'.")
   if (!is.matrix(newdata))
     stop("`newdata` must be a matrix.")
   if (ncol(newdata) != length(object$xCentres))
@@ -400,14 +400,14 @@ predict.AddiVortesFit <- function(object, newdata,
   return(predictions)
 }
 
-#' @title Plot Method for AddiVortesFit
+#' @title Plot Method for AddiVortes
 #'
 #' @description
-#' Generates comprehensive diagnostic plots for a fitted `AddiVortesFit` object.
+#' Generates comprehensive diagnostic plots for a fitted `AddiVortes` object.
 #' This function creates multiple diagnostic plots including residuals,
 #' MCMC traces for sigma, and tessellation complexity over iterations.
 #'
-#' @param x An object of class `AddiVortesFit`, typically the result of a
+#' @param x An object of class `AddiVortes`, typically the result of a
 #'   call to `AddiVortes()`.
 #' @param x_train A matrix of the original training covariates.
 #' @param y_train A numeric vector of the original training true outcomes.
@@ -435,11 +435,11 @@ predict.AddiVortesFit <- function(object, newdata,
 #' @importFrom graphics plot abline title par layout lines points segments legend
 #' @importFrom stats lowess residuals fitted predict sd
 #' @export
-#' @method plot AddiVortesFit
+#' @method plot AddiVortes
 #'
 #' @examples
 #' \dontrun{
-#' # Assuming 'fit' is a trained AddiVortesFit object
+#' # Assuming 'fit' is a trained AddiVortes object
 #' plot(fit, x_train = x_train_data, y_train = y_train_data)
 #' 
 #' # Show only specific plots
@@ -449,12 +449,12 @@ predict.AddiVortesFit <- function(object, newdata,
 #' plot(fit, x_train = x_train_data, y_train = y_train_data, 
 #'      sigma_trace = my_sigma_samples)
 #' }
-plot.AddiVortesFit <- function(x, x_train, y_train, sigma_trace = NULL,
+plot.AddiVortes <- function(x, x_train, y_train, sigma_trace = NULL,
                                which = c(1, 2, 3), ask = FALSE, ...) {
   
   # --- Input Validation ---
-  if (!inherits(x, "AddiVortesFit")) {
-    stop("`x` must be an object of class 'AddiVortesFit'.")
+  if (!inherits(x, "AddiVortes")) {
+    stop("`x` must be an object of class 'AddiVortes'.")
   }
   if (missing(x_train) || missing(y_train)) {
     stop("`x_train` and `y_train` must be provided for diagnostic plots.")
