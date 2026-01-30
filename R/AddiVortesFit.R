@@ -159,6 +159,11 @@ print.AddiVortes <- function(x, ...) {
 #' @export
 #' @method summary AddiVortes
 summary.AddiVortes <- function(object, ...) {
+  # --- Input Validation ---
+  if (!inherits(object, "AddiVortes")) {
+    stop("`object` must be an object of class 'AddiVortes'.")
+  }
+  
   # Call the print method first
   print(object)
   
