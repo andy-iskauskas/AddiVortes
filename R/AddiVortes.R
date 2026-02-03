@@ -53,7 +53,9 @@ AddiVortes <- function(y, x, m = 200,
   #### Determining the metric to use -------------------------------------------
   ## In the future, would like to allow for user-provided list(ranges, metric)
   if (metric == "Euclidean") {
-    #space <- list(ranges = NULL, metric = function(x,y) sum((x-y)^2))
+    ## If functional form
+    # space <- list(ranges = NULL, metric = function(x,y) sum((x-y)^2))
+    ## Otherwise
     space <- list(ranges = NULL, metric = metric)
   }
   if (metric == "Sphere") {
@@ -62,8 +64,10 @@ AddiVortes <- function(y, x, m = 200,
       tryCatch(acos(sin(x[2])*sin(y[2])+cos(x[2])*cos(y[2])*cos(abs(x[1]-y[1])))^2,
                warning = function(w) return(0))
     }
+    ## Functional form
+    # space <- list(ranges = sphere_ranges, metric = sphere_metric)
+    ## Else
     space <- list(ranges = sphere_ranges, metric = metric)
-    #space <- list(ranges = sphere_ranges, metric = sphere_metric)
   }
   #### Scaling x and y ---------------------------------------------------------
   yScalingResult <- scaleData_internal(y)

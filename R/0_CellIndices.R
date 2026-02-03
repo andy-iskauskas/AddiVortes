@@ -16,6 +16,7 @@
 #'   in `x` and its value is the row index of the nearest centre in `tess`.
 #'
 #' @keywords internal
+#' @export
 #' @noRd
 cellIndices <- function(x, tess, dim, metric = function(x,y) sum((x-y)^2)) {
   if (length(tess[, 1]) == 1) { # only 1 centre

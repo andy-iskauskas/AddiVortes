@@ -60,6 +60,7 @@ extern "C" {
     int* dim_p = INTEGER(dim_sexp);
 
     // --- Set up distance function ---
+    // Needed for functional distance...
     // if (!Rf_isFunction(dist_sexp)) {
     //   Rf_error("Expected a distance function.");
     // }
@@ -83,26 +84,27 @@ extern "C" {
     }
     
     // --- Create result matrix ---
-    SEXP result, call;
+    SEXP result;
     PROTECT(result = Rf_allocMatrix(INTSXP, query_rows, k));
     int* p_result = INTEGER(result);
+
+    // This is needed for functional distance
+    // SEXP call, t_pt, q_pt;
+    // PROTECT(t_pt = Rf_allocVector(REALSXP, tess_cols));
+    // PROTECT(q_pt = Rf_allocVector(REALSXP, query_cols));
+    // PROTECT(call = Rf_lang3(dist_sexp, q_pt, t_pt));
     
     // --- Main Logic: For each query point, find k nearest neighbors ---
     for (int q = 0; q < query_rows; ++q) {
       
       // Calculate distances to all tessellation points
       std::vector<std::pair<double, int>> distances(tess_rows);
-
-      
-      // SEXP q_pt = Rf_allocVector(REALSXP, query_cols);
+      // Functional distance
       // double* q_point = REAL(q_pt);
-      // //std::vector<double> q_point(query_cols);
       // for (int i = 0; i < query_cols; ++i) {
       //   q_point[i] = p_query[q + i * query_rows];
       // }
       // for (int t = 0; t < tess_rows; ++t) {
-      //   //std::vector<double> t_point(tess_cols);
-      //   SEXP t_pt = Rf_allocVector(REALSXP, tess_cols);
       //   double* t_point = REAL(t_pt);
       //   for (int i = 0; i < tess_cols; ++i) {
       //     if (!in_vector(i+1, dim_p_temp)) {
@@ -111,12 +113,12 @@ extern "C" {
       //     else {
       //       t_point[i] = p_tess[t + i * tess_rows];
       //     }
-      //     call = Rf_lang3(dist_sexp, q_pt, t_pt);
       //     double dval = REAL(Rf_eval(call, R_GlobalEnv))[0];
       //     distances[t] = std::make_pair(dval, t+1);
       //   }
       // }
       
+      // Hard-coded
       for (int t = 0; t < tess_rows; ++t) {
         double dval = 0.0;
         if (metric == "Sphere") {
@@ -145,10 +147,10 @@ extern "C" {
             dval += diff * diff;
           }
         }
-        // Rprintf("%f \n", dist_sq);
         distances[t] = std::make_pair(dval, t + 1); // +1 for R 1-based indexing
       }
       
+      // All code continues here.
       // Sort by squared distance to get k nearest neighbors
       std::partial_sort(distances.begin(), distances.begin() + k, distances.end());
       
@@ -158,6 +160,9 @@ extern "C" {
       }
     }
     
+    // If functional, more things to unprotect
+    // UNPROTECT(4);
+    // Otherwise
     UNPROTECT(1);
     return result;
   } 
