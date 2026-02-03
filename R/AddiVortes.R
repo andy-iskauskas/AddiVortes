@@ -59,7 +59,7 @@ AddiVortes <- function(y, x, m = 200,
     space <- list(ranges = NULL, metric = metric)
   }
   if (metric == "Sphere") {
-    sphere_ranges <- list(theta = c(-pi, pi), phi = c(-pi/2, pi/2))
+    sphere_ranges <- list(phi = c(-pi/2, pi/2), theta = c(-pi, pi))
     sphere_metric <- function(x, y) {
       tryCatch(acos(sin(x[2])*sin(y[2])+cos(x[2])*cos(y[2])*cos(abs(x[1]-y[1])))^2,
                warning = function(w) return(0))
@@ -282,7 +282,7 @@ AddiVortes <- function(y, x, m = 200,
         mus,
         covariateIndices,
         NumCovariates,
-        metric
+        space$metric
       )
       tess_j_star <- newTessOutput[[1]]
       dim_j_star <- newTessOutput[[2]]

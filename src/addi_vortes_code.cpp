@@ -19,6 +19,39 @@ bool in_vector(int value, const std::vector<int>& vec) {
   return std::find(vec.begin(), vec.end(), value) != vec.end();
 }
 
+// Computes euclidean distance between two points
+double euclidean_distance(std::vector<double>& p1, std::vector<double>& p2) {
+  if (p1.size() != p2.size()) {
+    Rf_error("Covariate points have incompatible dimensions.");
+  }
+  double dist = 0.0;
+  for (int i = 0; i < p1.size(); ++i) {
+    dist += pow(p1[i]-p2[i], 2);
+  }
+  return dist;
+}
+
+// Computes spherical distance between two points. Note that this assumes that the final
+// coordinate is the 'azimuthal' angle; ie the only one with range [0, 2pi]
+double sphere_distance(std::vector<double>& p1, std::vector<double>& p2) {
+  if (p1.size() != p2.size()) {
+    Rf_error("Covariate points have incompatible dimensions.");
+  }
+  double angle_diff = p1[p1.size()-1]-p2[p1.size()-1];
+  for (int i = p1.size()-2; i >= 0; --i) {
+    double internal = cos(p1[i])*cos(p2[i]) + sin(p1[i])*sin(p2[i])*cos(angle_diff);
+    //double internal = sin(p1[i])*sin(p2[i]) + cos(p1[i])*cos(p2[i])*cos(angle_diff);
+    if (internal > 1) {
+      internal = 1.0;
+    }
+    if (internal < -1) {
+      internal = -1.0;
+    }
+    angle_diff = acos(internal);
+  }
+  return angle_diff * angle_diff;
+}
+
 extern "C" {
 
 
@@ -99,6 +132,7 @@ extern "C" {
       
       // Calculate distances to all tessellation points
       std::vector<std::pair<double, int>> distances(tess_rows);
+      double dval = 0.0;
       // Functional distance
       // double* q_point = REAL(q_pt);
       // for (int i = 0; i < query_cols; ++i) {
@@ -119,33 +153,28 @@ extern "C" {
       // }
       
       // Hard-coded
+      std::vector<double> q_pt(query_cols, 0.0);
+      std::vector<double> t_pt(tess_cols, 0.0);
       for (int t = 0; t < tess_rows; ++t) {
-        double dval = 0.0;
-        if (metric == "Sphere") {
-          double deltheta = 0.0;
-          double phi1 = 0.0;
-          double phi2 = 0.0;
-          if (in_vector(1, dim_p_temp)) {
-            deltheta = abs(p_query[q]-p_tess[t]);
-          }
-          if (in_vector(2, dim_p_temp)) {
-            phi1 = p_query[q+query_rows];
-            phi2 = p_tess[t+tess_rows];
+        for (int d = 0; d < query_cols; ++d) {
+          q_pt[d] = p_query[q + d * query_rows];
+        }
+        for (int d = 0; d < tess_cols; ++d) {
+          if (in_vector(d + 1, dim_p_temp)) {
+            t_pt[d] = p_tess[t + d * tess_rows];
           }
           else {
-            phi1 = p_query[q+query_rows];
-            phi2 = p_query[q+query_rows];
+            t_pt[d] = p_query[q + d * query_rows];
           }
-          dval = pow(acos(sin(phi1)*sin(phi2)+cos(phi1)*cos(phi2)*cos(deltheta)),2);
+        }
+        if (metric == "Sphere") {
+          dval = sphere_distance(q_pt, t_pt);
+        }
+        if (metric == "Euclidean") {
+          dval = euclidean_distance(q_pt, t_pt);
         }
         else {
-          for (int d = 0; d < tess_cols; ++d) {
-            double diff = 0;
-            if (in_vector(d, dim_p_temp)) {
-              diff = p_query[q + d * query_rows] - p_tess[t + d * tess_rows];
-            }
-            dval += diff * diff;
-          }
+          dval = euclidean_distance(q_pt, t_pt);
         }
         distances[t] = std::make_pair(dval, t + 1); // +1 for R 1-based indexing
       }
@@ -262,8 +291,8 @@ extern "C" {
     std::vector<double> maxs;
 
     if (metric == "Sphere") {
-      mins = {-1*M_PI,-1*M_PI/2};
-      maxs = {M_PI, M_PI/2};
+      mins = {-1*M_PI/2,-1*M_PI};
+      maxs = {M_PI/2, M_PI};
     }
     
     // Get R's random number generator state
