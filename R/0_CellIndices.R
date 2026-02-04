@@ -25,8 +25,7 @@ cellIndices <- function(x, tess, dim, metric = "Euclidean") {
   } else { # multiple
     if (ncol(tess) != ncol(x)) {
       new_tess <- matrix(0, nrow = nrow(tess), ncol = ncol(x))
-      for (i in seq_along(dim))
-        new_tess[,dim[i]] <- tess[,i]
+      new_tess[,dim] <- tess
       tess <- new_tess
     }
     CellsForGivenTess <- knnx_index(tess, 

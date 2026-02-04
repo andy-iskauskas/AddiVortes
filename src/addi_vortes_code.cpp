@@ -88,15 +88,17 @@ extern "C" {
     SEXP result;
     PROTECT(result = Rf_allocMatrix(INTSXP, query_rows, k));
     int* p_result = INTEGER(result);
+
+    // Define variables to be used in the loop
+    double dval = 0.0;
+    std::vector<double> q_pt(query_cols, 0.0);
+    std::vector<double> t_pt(tess_cols, 0.0);
     
     // --- Main Logic: For each query point, find k nearest neighbors ---
     for (int q = 0; q < query_rows; ++q) {
       
       // Calculate distances to all tessellation points
       std::vector<std::pair<double, int>> distances(tess_rows);
-      double dval = 0.0;
-      std::vector<double> q_pt(query_cols, 0.0);
-      std::vector<double> t_pt(tess_cols, 0.0);
       
       for (int t = 0; t < tess_rows; ++t) {
         for (int d = 0; d < query_cols; ++d) {
