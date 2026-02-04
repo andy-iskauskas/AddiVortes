@@ -16,9 +16,11 @@ AddiVortes(
   sd = 0.8,
   Omega = min(3, ncol(x)),
   LambdaRate = 25,
-  IntialSigma = "Linear",
+  InitialSigma = "Linear",
   thinning = 1,
-  showProgress = TRUE
+  scaleX = TRUE,
+  metric = "Euclidean",
+  showProgress = interactive()
 )
 }
 \arguments{
@@ -38,17 +40,21 @@ AddiVortes(
 
 \item{k}{The number of centres.}
 
-\item{sd}{The standard deviation.}
+\item{sd}{The standard deviation used in centre proposals.}
 
 \item{Omega}{Omega/(number of covariates) is the prior probability of adding a dimension.}
 
 \item{LambdaRate}{The rate of the Poisson distribution for the number of centres.}
 
-\item{IntialSigma}{The method used to calculate the initial variance.}
+\item{InitialSigma}{The method used to calculate the initial variance.}
 
 \item{thinning}{The thinning rate.}
 
-\item{showProgress}{Logical; if TRUE (default), progress bars and messages are shown during fitting.}
+\item{scaleX}{If TRUE (default), the covariates are scaled to \link{-0.5, 0.5}.}
+
+\item{metric}{Either "Euclidean" (default) or "Spherical".}
+
+\item{showProgress}{Logical; if TRUE, progress bars and messages are shown during fitting.}
 }
 \value{
 An AddiVortes object containing the posterior samples of the

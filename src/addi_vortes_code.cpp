@@ -19,6 +19,38 @@ bool in_vector(int value, const std::vector<int>& vec) {
   return std::find(vec.begin(), vec.end(), value) != vec.end();
 }
 
+// Computes Euclidean distance between two points
+double euclidean_distance(std::vector<double>& p1, std::vector<double>& p2) {
+  if (p1.size() != p2.size()) {
+    Rf_error("Points have incompatible dimensions.");
+  }
+  double dist = 0.0;
+  for (int i = 0; i < p1.size(); ++i) {
+    dist += pow(p1[i]-p2[i], 2);
+  }
+  return dist;
+}
+
+// Computes great circle distance on an n-sphere.
+// It assumes that the last dimension is the 'azimuthal' distance; i.e. the one with range [-pi, pi].
+double spherical_distance(std::vector<double>& p1, std::vector<double>& p2) {
+  if (p1.size() != p2.size()) {
+    Rf_error("Points have incompatible dimensions.");
+  }
+  double angle_diff = p1[p1.size()-1]-p2[p2.size()-1];
+  for (int i = p1.size()-2; i >= 0; --i) {
+    double internal = sin(p1[i]) * sin(p2[i]) + cos(p1[i]) * cos(p2[i]) * cos(angle_diff);
+    if (internal > 1) {
+      internal = 1;
+    }
+    if (internal < -1) {
+      internal = -1.0;
+    }
+    angle_diff = acos(internal);
+  }
+  return(angle_diff * angle_diff);
+}
+
 extern "C" {
   
   // ---------------------------------------------------------------------------
@@ -26,12 +58,16 @@ extern "C" {
   // ---------------------------------------------------------------------------
   // This function implements k-nearest neighbors index search to replace FNN::knnx.index
   // The R wrapper function is `knnx.index`.
-  SEXP knnx_index_cpp(SEXP tess_sexp, SEXP query_sexp, SEXP k_sexp) {
+  SEXP knnx_index_cpp(SEXP tess_sexp, SEXP query_sexp, SEXP k_sexp, SEXP dim_sexp, SEXP dist_sexp) {
     
     // --- Unpack arguments ---
     double* p_tess = REAL(tess_sexp);
     double* p_query = REAL(query_sexp);
     int k = INTEGER(k_sexp)[0];
+    int* dim_p = INTEGER(dim_sexp);
+    std::string metric = CHAR(STRING_ELT(dist_sexp, 0));
+
+    std::vector<int> dim_p_temp(dim_p, dim_p + Rf_length(dim_sexp));
     
     int tess_rows = Rf_nrows(tess_sexp);
     int tess_cols = Rf_ncols(tess_sexp);
@@ -58,14 +94,29 @@ extern "C" {
       
       // Calculate distances to all tessellation points
       std::vector<std::pair<double, int>> distances(tess_rows);
+      double dval = 0.0;
+      std::vector<double> q_pt(query_cols, 0.0);
+      std::vector<double> t_pt(tess_cols, 0.0);
       
       for (int t = 0; t < tess_rows; ++t) {
-        double dist_sq = 0.0;
-        for (int d = 0; d < tess_cols; ++d) {
-          double diff = p_query[q + d * query_rows] - p_tess[t + d * tess_rows];
-          dist_sq += diff * diff;
+        for (int d = 0; d < query_cols; ++d) {
+          q_pt[d] = p_query[q + d * query_rows];
         }
-        distances[t] = std::make_pair(dist_sq, t + 1); // +1 for R 1-based indexing
+        for (int d = 0; d < tess_cols; ++d) {
+          if (in_vector(d+1, dim_p_temp)) {
+            t_pt[d] = p_tess[t + d * tess_rows];
+          }
+          else {
+            t_pt[d] = p_query[q + d * query_rows];
+          }
+        }
+        if (metric == "Spherical") {
+          dval = spherical_distance(q_pt, t_pt);
+        }
+        else {
+          dval = euclidean_distance(q_pt, t_pt);
+        }
+        distances[t] = std::make_pair(dval, t + 1); // +1 for R 1-based indexing
       }
       
       // Sort by squared distance to get k nearest neighbors
@@ -160,16 +211,26 @@ extern "C" {
   // This function proposes a new tessellation based on the current one,
   // modifying it according to a set of rules and a random number generator.
   // The R wrapper function is `proposeTessellation`.
-  SEXP propose_tessellation_cpp(SEXP tess_j_sexp, SEXP dim_j_sexp, SEXP sd_sexp, SEXP num_cov_sexp) {
+  SEXP propose_tessellation_cpp(SEXP tess_j_sexp, SEXP dim_j_sexp, SEXP sd_sexp, SEXP mu_sexp, SEXP num_cov_sexp, SEXP metric_sexp) {
     
     // --- Unpack arguments ---
     double* p_tess_j = REAL(tess_j_sexp);
     int* p_dim_j = INTEGER(dim_j_sexp);
-    double sd = REAL(sd_sexp)[0];
+    double* sd = REAL(sd_sexp);
+    double* mu = REAL(mu_sexp);
     int numCovariates = INTEGER(num_cov_sexp)[0];
+    std::string metric = CHAR(STRING_ELT(metric_sexp, 0));
     
     int tess_j_rows = Rf_nrows(tess_j_sexp);
     int d_j_length = Rf_length(dim_j_sexp);
+
+    std::vector<double> mins;
+    std::vector<double> maxs;
+    // This currently only works for 2d data.
+    if (metric == "Spherical") {
+      mins = {-1*M_PI_2, -1*M_PI};
+      maxs = {M_PI_2, M_PI};
+    }
     
     // Get R's random number generator state
     GetRNGstate();
@@ -178,6 +239,8 @@ extern "C" {
     std::vector<int> dim_j_star(p_dim_j, p_dim_j + d_j_length);
     std::vector<double> tess_j_star(p_tess_j, p_tess_j + (tess_j_rows * d_j_length));
     std::string modification = "Change";
+
+    double new_val = 0.0;
     
     double p = unif_rand();
     
@@ -197,7 +260,16 @@ extern "C" {
         for (int c = 0; c < d_j_length; ++c) {
           new_tess[r + c * tess_j_rows] = tess_j_star[r + c * tess_j_rows];
         }
-        new_tess[r + d_j_length * tess_j_rows] = norm_rand() * sd;
+        new_val = mu[new_dim-1] + norm_rand() * sd[new_dim-1];
+        if (metric == "Spherical") {
+          while (new_val > maxs[new_dim-1]) {
+            new_val -= maxs[new_dim-1];
+          }
+          while (new_val <  mins[new_dim-1]) {
+            new_val += maxs[new_dim-1];
+          }
+        }
+        new_tess[r + d_j_length * tess_j_rows] = new_val;
       }
       tess_j_star = new_tess;
       
@@ -221,7 +293,16 @@ extern "C" {
     } else if (p < 0.6 || (p < 0.8 && tess_j_rows == 1)) {
       modification = "AC";
       for (int i = 0; i < d_j_length; ++i) {
-        tess_j_star.insert(tess_j_star.begin() + (i * (tess_j_rows + 1)) + tess_j_rows, norm_rand() * sd);
+        new_val = mu[i] + norm_rand() * sd[i];
+        if (metric == "Spherical") {
+          while (new_val > maxs[i]) {
+            new_val -= maxs[i];
+          }
+          while (new_val < mins[i]) {
+            new_val += maxs[i];
+          }
+        }
+        tess_j_star.insert(tess_j_star.begin() + (i * (tess_j_rows + 1)) + tess_j_rows, new_val);
       }
       
     } else if (p < 0.8 && tess_j_rows > 1) {
@@ -241,7 +322,16 @@ extern "C" {
     } else if (p < 0.9 || d_j_length == numCovariates) {
       int centre_to_change_idx = floor(unif_rand() * tess_j_rows);
       for (int c = 0; c < d_j_length; ++c) {
-        tess_j_star[centre_to_change_idx + c * tess_j_rows] = norm_rand() * sd;
+        new_val = mu[c] + norm_rand() * sd[c];
+        if (metric == "Spherical") {
+          while (new_val > maxs[c]) {
+            new_val -= maxs[c];
+          }
+          while (new_val < mins[c]) {
+            new_val += maxs[c];
+          }
+        }
+        tess_j_star[centre_to_change_idx + c * tess_j_rows] = new_val;
       }
       
     } else {
@@ -254,7 +344,16 @@ extern "C" {
       
       dim_j_star[dim_to_change_idx] = new_dim;
       for (int r = 0; r < tess_j_rows; ++r) {
-        tess_j_star[r + dim_to_change_idx * tess_j_rows] = norm_rand() * sd;
+        new_val = mu[dim_to_change_idx] + norm_rand() * sd[dim_to_change_idx];
+        if (metric == "Spherical") {
+          while (new_val > maxs[dim_to_change_idx]) {
+            new_val -= maxs[dim_to_change_idx];
+          }
+          while (new_val < mins[dim_to_change_idx]) {
+            new_val += maxs[dim_to_change_idx];
+          }
+        }
+        tess_j_star[r + dim_to_change_idx * tess_j_rows] = new_val;
       }
     }
     

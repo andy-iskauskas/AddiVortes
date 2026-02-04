@@ -13,7 +13,9 @@ new_AddiVortes(
   xRanges,
   yCentre,
   yRange,
-  inSampleRmse
+  inSampleRmse,
+  xScaled,
+  metric
 )
 }
 \arguments{
