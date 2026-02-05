@@ -33,20 +33,28 @@ double euclidean_distance(std::vector<double>& p1, std::vector<double>& p2) {
 
 // Computes great circle distance on an n-sphere.
 // It assumes that the last dimension is the 'azimuthal' distance; i.e. the one with range [-pi, pi].
+// Optimisation not great: needs some work with the trigonometric functions.
+// The issue is that one needs all the covariates to calculate: you can't just cull the covariates not in the tessellation.
 double spherical_distance(std::vector<double>& p1, std::vector<double>& p2) {
   if (p1.size() != p2.size()) {
     Rf_error("Points have incompatible dimensions.");
   }
-  double angle_diff = p1[p1.size()-1]-p2[p2.size()-1];
+  double angle_diff = cos(p1[p1.size()-1]-p2[p2.size()-1]);
   for (int i = p1.size()-2; i >= 0; --i) {
-    double internal = sin(p1[i]) * sin(p2[i]) + cos(p1[i]) * cos(p2[i]) * cos(angle_diff);
+    double internal = cos(p1[i]-p2[i]) + sin(p1[i])*sin(p2[i])*(1+angle_diff);
+    //double internal = sin(p1[i]) * sin(p2[i]) + cos(p1[i]) * cos(p2[i]) * angle_diff;
     if (internal > 1) {
       internal = 1;
     }
     if (internal < -1) {
       internal = -1.0;
     }
-    angle_diff = acos(internal);
+    if (i == 0) {
+      angle_diff = acos(internal);
+    }
+    else {
+      angle_diff = internal;
+    }
   }
   return(angle_diff * angle_diff);
 }
@@ -91,8 +99,8 @@ extern "C" {
 
     // Define variables to be used in the loop
     double dval = 0.0;
-    std::vector<double> q_pt(query_cols, 0.0);
-    std::vector<double> t_pt(tess_cols, 0.0);
+    std::vector<double> q_pt(query_cols);
+    std::vector<double> t_pt(tess_cols);
     
     // --- Main Logic: For each query point, find k nearest neighbors ---
     for (int q = 0; q < query_rows; ++q) {
@@ -226,12 +234,12 @@ extern "C" {
     int tess_j_rows = Rf_nrows(tess_j_sexp);
     int d_j_length = Rf_length(dim_j_sexp);
 
-    std::vector<double> mins;
-    std::vector<double> maxs;
-    // This currently only works for 2d data.
+    std::vector<double> mins(numCovariates, -M_PI/2);
+    std::vector<double> maxs(numCovariates, M_PI/2);
+
     if (metric == "Spherical") {
-      mins = {-1*M_PI_2, -1*M_PI};
-      maxs = {M_PI_2, M_PI};
+      mins[mins.size()-1] *= 2;
+      maxs[maxs.size()-1] *= 2;
     }
     
     // Get R's random number generator state
