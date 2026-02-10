@@ -41,7 +41,7 @@ proposeTessellation <- function(tess_j, dim_j, sd, mu, covariateIndices,
                    as.double(sd),
                    as.double(mu),
                    as.integer(NumCovariates),
-                   metric)
+                   as.integer(metric))
   
   return(results)
 }

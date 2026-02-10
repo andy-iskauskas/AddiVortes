@@ -323,15 +323,12 @@ predict.AddiVortes <- function(object, newdata,
   }
   
   # Scale new data if required
-  if (object$xScaled) {
-    xNewScaled <- applyScaling_internal(
-      mat = newdata,
-      centres = object$xCentres,
-      ranges = object$xRanges
-    )
-  }
-  else
-    xNewScaled = newdata
+  xNewScaled <- applyScaling_internal(
+    mat = newdata,
+    centres = object$xCentres,
+    ranges = object$xRanges
+  )
+  xNewScaled[,object$metric != 0] <- newdata[,object$metric != 0]
   
   mTessellations <- length(posteriorTessSamples[[1]])
   nObs <- nrow(xNewScaled)

@@ -19,6 +19,38 @@ bool in_vector(int value, const std::vector<int>& vec) {
   return std::find(vec.begin(), vec.end(), value) != vec.end();
 }
 
+int n_elem(int value, const std::vector<int>& vec) {
+  int total = 0;
+  for (int i = 0; i < vec.size(); ++i) {
+    if (vec[i] == value) {
+      total++;
+    }
+  }
+  return total;
+}
+
+std::vector<int> which_elem(int value, const std::vector<int>& vec) {
+  std::vector<int> indexes(n_elem(value, vec));
+  int indexes_index = 0;
+  for (int i = 0; i < vec.size(); ++i) {
+    if (vec[i] == value) {
+      indexes[indexes_index] = i;
+      indexes_index++;
+    }
+  }
+  return indexes;
+}
+
+double period_shift(double val, double min, double max) {
+  while (val >= max) {
+    val -= max;
+  }
+  while (val < min) {
+    val += max;
+  }
+  return val;
+}
+
 // Computes Euclidean distance between two points
 double euclidean_distance(std::vector<double>& p1, std::vector<double>& p2) {
   if (p1.size() != p2.size()) {
@@ -38,6 +70,9 @@ double euclidean_distance(std::vector<double>& p1, std::vector<double>& p2) {
 double spherical_distance(std::vector<double>& p1, std::vector<double>& p2) {
   if (p1.size() != p2.size()) {
     Rf_error("Points have incompatible dimensions.");
+  }
+  if (p1.size() == 1) {
+    return (p1[0]-p2[0])*(p1[0]-p2[0]);
   }
   double angle_diff = cos(p1[p1.size()-1]-p2[p2.size()-1]);
   for (int i = p1.size()-2; i >= 0; --i) {
@@ -73,9 +108,10 @@ extern "C" {
     double* p_query = REAL(query_sexp);
     int k = INTEGER(k_sexp)[0];
     int* dim_p = INTEGER(dim_sexp);
-    std::string metric = CHAR(STRING_ELT(dist_sexp, 0));
+    int* metric_ptr = INTEGER(dist_sexp);
 
     std::vector<int> dim_p_temp(dim_p, dim_p + Rf_length(dim_sexp));
+    std::vector<int> metric(metric_ptr, metric_ptr + Rf_length(dist_sexp));
     
     int tess_rows = Rf_nrows(tess_sexp);
     int tess_cols = Rf_ncols(tess_sexp);
@@ -98,9 +134,28 @@ extern "C" {
     int* p_result = INTEGER(result);
 
     // Define variables to be used in the loop
-    double dval = 0.0;
-    std::vector<double> q_pt(query_cols);
-    std::vector<double> t_pt(tess_cols);
+    int how_many_E = n_elem(0, metric);
+    std::vector<double> t_pt_E(how_many_E);
+    std::vector<double> q_pt_E(how_many_E);
+    int how_many_S = n_elem(1, metric);
+    std::vector<double> t_pt_S(how_many_S);
+    std::vector<double> q_pt_S(how_many_S);
+    std::vector<int> coind(metric.size());
+    int count_S = 0;
+    int count_E = 0;
+    for (int i = 0; i < metric.size(); i++) {
+      if (metric[i] == 0) {
+        coind[i] = count_E;
+        count_E++;
+      }
+      if (metric[i] == 1) {
+        coind[i] = count_S;
+        count_S++;
+      }
+    }
+    double dval;
+    //std::vector<double> q_pt(query_cols);
+    //std::vector<double> t_pt(tess_cols);
     
     // --- Main Logic: For each query point, find k nearest neighbors ---
     for (int q = 0; q < query_rows; ++q) {
@@ -109,22 +164,38 @@ extern "C" {
       std::vector<std::pair<double, int>> distances(tess_rows);
       
       for (int t = 0; t < tess_rows; ++t) {
+        dval = 0.0;
         for (int d = 0; d < query_cols; ++d) {
-          q_pt[d] = p_query[q + d * query_rows];
+          if (metric[d] == 0) {
+            q_pt_E[coind[d]] = p_query[q + d * query_rows];
+          }
+          if (metric[d] == 1) {
+            q_pt_S[coind[d]] = p_query[q + d * query_rows];
+          }
         }
         for (int d = 0; d < tess_cols; ++d) {
           if (in_vector(d+1, dim_p_temp)) {
-            t_pt[d] = p_tess[t + d * tess_rows];
+            if (metric[d] == 0) {
+              t_pt_E[coind[d]] = p_tess[t + d * tess_rows];
+            }
+            if (metric[d] == 1) {
+              t_pt_S[coind[d]] = p_tess[t + d * tess_rows];
+            }
           }
           else {
-            t_pt[d] = p_query[q + d * query_rows];
+            if (metric[d] == 0) {
+              t_pt_E[coind[d]] = p_query[q + d * query_rows];
+            }
+            if (metric[d] == 1) {
+              t_pt_S[coind[d]] = p_query[q + d * query_rows];
+            }
           }
         }
-        if (metric == "Spherical") {
-          dval = spherical_distance(q_pt, t_pt);
+        if (in_vector(1, metric)) {
+          dval += spherical_distance(q_pt_S, t_pt_S);
         }
-        else {
-          dval = euclidean_distance(q_pt, t_pt);
+        if (in_vector(0, metric)) {
+          dval += euclidean_distance(q_pt_E, t_pt_E);
         }
         distances[t] = std::make_pair(dval, t + 1); // +1 for R 1-based indexing
       }
@@ -229,18 +300,12 @@ extern "C" {
     double* sd = REAL(sd_sexp);
     double* mu = REAL(mu_sexp);
     int numCovariates = INTEGER(num_cov_sexp)[0];
-    std::string metric = CHAR(STRING_ELT(metric_sexp, 0));
+    int* metric_ptr = INTEGER(metric_sexp);
+
+    std::vector<int> metric(metric_ptr, metric_ptr + Rf_length(metric_sexp));
     
     int tess_j_rows = Rf_nrows(tess_j_sexp);
     int d_j_length = Rf_length(dim_j_sexp);
-
-    std::vector<double> mins(numCovariates, -M_PI/2);
-    std::vector<double> maxs(numCovariates, M_PI/2);
-
-    if (metric == "Spherical") {
-      mins[mins.size()-1] *= 2;
-      maxs[maxs.size()-1] *= 2;
-    }
     
     // Get R's random number generator state
     GetRNGstate();
@@ -253,6 +318,11 @@ extern "C" {
     double new_val = 0.0;
     
     double p = unif_rand();
+
+    std::vector<int> sphere_index;
+    if (in_vector(1, metric)) {
+      sphere_index = which_elem(1, metric);
+    }
     
     // --- Main Logic ---
     // Add Dimension (AD): ensure we don't try to add a dimension when all covariates are already selected
@@ -271,12 +341,12 @@ extern "C" {
           new_tess[r + c * tess_j_rows] = tess_j_star[r + c * tess_j_rows];
         }
         new_val = mu[new_dim-1] + norm_rand() * sd[new_dim-1];
-        if (metric == "Spherical") {
-          while (new_val > maxs[new_dim-1]) {
-            new_val -= maxs[new_dim-1];
+        if (metric[new_dim-1] == 1) {
+          if (new_dim - 1 == sphere_index[sphere_index.size()-1]) {
+            new_val = period_shift(new_val, -M_PI, M_PI);
           }
-          while (new_val <  mins[new_dim-1]) {
-            new_val += maxs[new_dim-1];
+          else {
+            new_val = period_shift(new_val, -M_PI_2, M_PI_2);
           }
         }
         new_tess[r + d_j_length * tess_j_rows] = new_val;
@@ -304,12 +374,12 @@ extern "C" {
       modification = "AC";
       for (int i = 0; i < d_j_length; ++i) {
         new_val = mu[i] + norm_rand() * sd[i];
-        if (metric == "Spherical") {
-          while (new_val > maxs[i]) {
-            new_val -= maxs[i];
+        if (metric[i] == 1) {
+          if (i == sphere_index[sphere_index.size()-1]) {
+            new_val = period_shift(new_val, -M_PI, M_PI);
           }
-          while (new_val < mins[i]) {
-            new_val += maxs[i];
+          else {
+            new_val = period_shift(new_val, -M_PI_2, M_PI_2);
           }
         }
         tess_j_star.insert(tess_j_star.begin() + (i * (tess_j_rows + 1)) + tess_j_rows, new_val);
@@ -333,12 +403,12 @@ extern "C" {
       int centre_to_change_idx = floor(unif_rand() * tess_j_rows);
       for (int c = 0; c < d_j_length; ++c) {
         new_val = mu[c] + norm_rand() * sd[c];
-        if (metric == "Spherical") {
-          while (new_val > maxs[c]) {
-            new_val -= maxs[c];
+        if (metric[c] == 1) {
+          if (c == sphere_index[sphere_index.size()-1]) {
+            new_val = period_shift(new_val, -M_PI, M_PI);
           }
-          while (new_val < mins[c]) {
-            new_val += maxs[c];
+          else {
+            new_val = period_shift(new_val, -M_PI_2, M_PI_2);
           }
         }
         tess_j_star[centre_to_change_idx + c * tess_j_rows] = new_val;
@@ -355,12 +425,12 @@ extern "C" {
       dim_j_star[dim_to_change_idx] = new_dim;
       for (int r = 0; r < tess_j_rows; ++r) {
         new_val = mu[dim_to_change_idx] + norm_rand() * sd[dim_to_change_idx];
-        if (metric == "Spherical") {
-          while (new_val > maxs[dim_to_change_idx]) {
-            new_val -= maxs[dim_to_change_idx];
+        if (metric[dim_to_change_idx] == 1) {
+          if (dim_to_change_idx == sphere_index[sphere_index.size()-1]) {
+            new_val = period_shift(new_val, -M_PI, M_PI);
           }
-          while (new_val < mins[dim_to_change_idx]) {
-            new_val += maxs[dim_to_change_idx];
+          else {
+            new_val = period_shift(new_val, -M_PI_2, M_PI_2);
           }
         }
         tess_j_star[r + dim_to_change_idx * tess_j_rows] = new_val;

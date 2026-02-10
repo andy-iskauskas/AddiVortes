@@ -49,13 +49,25 @@ AddiVortes <- function(y, x, m = 200,
                        LambdaRate = 25,
                        InitialSigma = "Linear",
                        thinning = 1,
-                       scaleX = TRUE, metric = "Euclidean",
+                       scaleX = TRUE, metric = "E",
                        showProgress = interactive()) {
   #### Dealing with choice of metric -------------------------------------------
-  if (metric == "Spherical")
-    s_ranges <- list(phi = c(-pi/2, pi/2), theta = c(-pi, pi))
+  if (length(metric) == 1) {
+    if (metric == "E" || metric == "Euc" || metric == "Euclidean")
+      metric = rep(0, ncol(x))
+    else if (metric == "S" || metric == "Sphere" || metric == "Spherical")
+      metric = rep(1, ncol(x))
+  }
+  metric[metric == "E" | metric == "Euc" | metric == "Euclidean"] <- 0
+  metric[metric == "S" | metric == "Sphere" | metric == "Spherical"] <- 1
+  if (1 %in% metric) {
+    sphere_ranges <- list()
+    for (i in seq_along(sum(metric == 1)-1))
+      sphere_ranges[[length(sphere_ranges)+1]] <- c(-pi/2, pi/2)
+    sphere_ranges[[length(sphere_ranges)+1]] <- c(-pi, pi)
+  }
   else
-    s_ranges <- NULL
+    sphere_ranges <- NULL
   
   #### Scaling x and y ---------------------------------------------------------
   yScalingResult <- scaleData_internal(y)
@@ -69,18 +81,13 @@ AddiVortes <- function(y, x, m = 200,
   xRanges <- xScalingResult$ranges # Vector of values
   
   ##### Dealing with unscaled data ---------------------------------------------
-  if (!scaleX) {
-    xScaled <- x
-    mus <- xCentres
-  }
-  else mus <- rep(0, nrow(x))
+  xScaled[,metric != 0] <- x[,metric != 0]
+  mus <- rep(0, nrow(x))
+  mus[metric != 0] <- xCentres[metric != 0]
   
   #### Handling NULL sigma choice and ensuring it's vectorised
-  if (is.null(sd)) {
-    if (scaleX) sd <- 0.8
-    else sd <- sapply(xRanges, function(r) uniroot(function(x) qnorm(0.75,0,x)-r/2, c(0,r))$root)
-  }
-  if (length(sd) == 1) sd <- rep(sd, nrow(x))
+  sd <- sapply(xRanges, function(r) uniroot(function(x) qnorm(0.75,0,x)-r/2, c(0,r))$root)
+  sd[metric == 0] <- 0.8
   
   #### Check dimensions --------------------------------------------------------
   n <- length(y)
@@ -115,12 +122,14 @@ AddiVortes <- function(y, x, m = 200,
     list(matrix(rnorm(1, 0, sd)))
   })
   ## Make sure that tessellation proposals are within the region, if periodic
-  if (!is.null(s_ranges)) {
+  if (!is.null(sphere_ranges)) {
     for (i in seq_along(tess)) {
-      while (tess[[i]][1,1] > s_ranges[[dim[[i]]]][2])
-        tess[[i]][1,1] <- tess[[i]][1,1] - s_ranges[[dim[[i]]]][2]
-      while (tess[[i]][1,1] < s_ranges[[dim[[i]]]][1])
-        tess[[i]][1,1] <- tess[[i]][1,1] + s_ranges[[dim[[i]]]][2]
+      if (metric[dim[[i]]] == 1) {
+        while (tess[[i]][1,1] > sphere_ranges[[dim[[i]]]][2])
+          tess[[i]][1,1] <- tess[[i]][1,1] - sphere_ranges[[dim[[i]]]][2]
+        while (tess[[i]][1,1] < sphere_ranges[[dim[[i]]]][1])
+          tess[[i]][1,1] <- tess[[i]][1,1] + sphere_ranges[[dim[[i]]]][2]
+      }
     }
   }
   

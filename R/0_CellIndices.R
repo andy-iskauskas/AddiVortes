@@ -30,7 +30,7 @@ cellIndices <- function(x, tess, dim, metric = "Euclidean") {
     }
     CellsForGivenTess <- knnx_index(tess, 
                                     x, 1,
-                                    dim, metric
+                                    dim, as.integer(metric)
     )
   }
 } # Implicit return of CellsForGivenTess
