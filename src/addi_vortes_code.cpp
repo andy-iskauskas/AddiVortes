@@ -76,8 +76,7 @@ double spherical_distance(std::vector<double>& p1, std::vector<double>& p2) {
   }
   double angle_diff = cos(p1[p1.size()-1]-p2[p2.size()-1]);
   for (int i = p1.size()-2; i >= 0; --i) {
-    double internal = cos(p1[i]-p2[i]) + sin(p1[i])*sin(p2[i])*(1+angle_diff);
-    //double internal = sin(p1[i]) * sin(p2[i]) + cos(p1[i]) * cos(p2[i]) * angle_diff;
+    double internal = sin(p1[i]) * sin(p2[i]) + cos(p1[i]) * cos(p2[i]) * angle_diff;
     if (internal > 1) {
       internal = 1;
     }
@@ -163,6 +162,7 @@ extern "C" {
       // Calculate distances to all tessellation points
       std::vector<std::pair<double, int>> distances(tess_rows);
       
+      /// Getting ref errors here when building the q_pt_S and t_pt_S
       for (int t = 0; t < tess_rows; ++t) {
         dval = 0.0;
         for (int d = 0; d < query_cols; ++d) {

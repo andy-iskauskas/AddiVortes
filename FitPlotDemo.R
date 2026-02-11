@@ -5,7 +5,7 @@
 library(ggplot2)
 library(plotly)
 library(purrr)
-set.seed(1024)
+set.seed(69)
 
 ## Helper for plotting the stuff.
 plot_preds <- function(fit, X, Y, preds = NULL) {
@@ -78,7 +78,6 @@ plot_preds(results_Boston, X_Boston[-samp_B,], Y_Boston[-samp_B], preds_Boston)
 
 
 ## Weather training
-# Not currently working!
 results_weather <- AddiVortes(y = Y_weather[samp_W],
                               x = X_weather[samp_W,],
                               m = 200,
@@ -140,20 +139,19 @@ ggplot(data = setNames(cbind.data.frame(p_grid_B, cell_member_B), c('x', 'y', 'c
   viridis::scale_fill_viridis(discrete = TRUE, labels = 1:6, name = "Cell")
 
 ## Sphere
-sph_to_xyz <- function(x, r = 1) c(r*cos(x[2]+pi)*sin(x[1]+pi/2), r*sin(x[2]+pi)*sin(x[1]+pi/2), r*cos(x[1]+pi/2))
+sph_to_xyz <- function(x, r = 1) c(r*cos(x[2])*sin(-x[1]+pi/2), r*sin(x[2])*sin(-x[1]+pi/2), r*cos(-x[1]+pi/2))
 ncS <- map(results_weather$posteriorTess[[1800]], dim)
 tess_choiceS <- which(map_dbl(ncS, ~.[2]) == 2)[which.max(map_dbl(ncS, ~.[1])[which(map_dbl(ncS, ~.[2])==2)])]
 tess_S <- results_weather$posteriorTess[[1800]][[tess_choiceS]]
 
 p_grid_S <- as.matrix(expand.grid(
-  seq(-pi/2, pi/2, length.out = 200),
-  seq(-pi, pi, length.out = 200)
+  seq(-pi/2, pi/2, length.out = 100),
+  seq(-pi, pi, length.out = 100)
 ))
 p_grid_S_plot <- t(apply(p_grid_S, 1, sph_to_xyz))
 cell_member_S <- cellIndices(p_grid_S, tess_S, as.integer(c(1,2)), metric = as.integer(c(1,1)))
 plot_ly(setNames(cbind.data.frame(p_grid_S_plot, as.factor(cell_member_S)), c('x','y','z','cell')),
         x = ~x, y = ~y, z = ~z, color = ~cell, colors = viridis::viridis(nrow(tess_S)))
-
 
 ## Cylinder
 cyl_to_xyz <- function(x, r = 1) c(r*cos(x[2]), r*sin(x[2]), x[1])

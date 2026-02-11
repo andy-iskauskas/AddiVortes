@@ -19,7 +19,7 @@ AddiVortes(
   InitialSigma = "Linear",
   thinning = 1,
   scaleX = TRUE,
-  metric = "Euclidean",
+  metric = "E",
   showProgress = interactive()
 )
 }

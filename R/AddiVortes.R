@@ -60,9 +60,10 @@ AddiVortes <- function(y, x, m = 200,
   }
   metric[metric == "E" | metric == "Euc" | metric == "Euclidean"] <- 0
   metric[metric == "S" | metric == "Sphere" | metric == "Spherical"] <- 1
+  metric <- as.integer(metric)
   if (1 %in% metric) {
     sphere_ranges <- list()
-    for (i in seq_along(sum(metric == 1)-1))
+    for (i in seq_len(sum(metric == 1)-1))
       sphere_ranges[[length(sphere_ranges)+1]] <- c(-pi/2, pi/2)
     sphere_ranges[[length(sphere_ranges)+1]] <- c(-pi, pi)
   }
@@ -106,7 +107,6 @@ AddiVortes <- function(y, x, m = 200,
       "Note: Omega (", Omega, ") exceeds number of covariates (", p, "). ",
       "The dimension inclusion probability will be clamped to 100%."
     )
-    Omega <- p - 1
   }
   
   #### Initialise predictions --------------------------------------------------
@@ -126,10 +126,11 @@ AddiVortes <- function(y, x, m = 200,
   if (!is.null(sphere_ranges)) {
     for (i in seq_along(tess)) {
       if (metric[dim[[i]]] == 1) {
-        while (tess[[i]][1,1] > sphere_ranges[[dim[[i]]]][2])
-          tess[[i]][1,1] <- tess[[i]][1,1] - sphere_ranges[[dim[[i]]]][2]
-        while (tess[[i]][1,1] < sphere_ranges[[dim[[i]]]][1])
-          tess[[i]][1,1] <- tess[[i]][1,1] + sphere_ranges[[dim[[i]]]][2]
+        sph_ind <- sum(metric[1:dim[[i]]] == 1)
+        while (tess[[i]][1,1] > sphere_ranges[[sph_ind]][2])
+          tess[[i]][1,1] <- tess[[i]][1,1] - sphere_ranges[[sph_ind]][2]
+        while (tess[[i]][1,1] < sphere_ranges[[sph_ind]][1])
+          tess[[i]][1,1] <- tess[[i]][1,1] + sphere_ranges[[sph_ind]][2]
       }
     }
   }
@@ -403,7 +404,7 @@ AddiVortes <- function(y, x, m = 200,
     yCentre = yCentre,
     yRange = yRange,
     inSampleRmse = sqrt(mean((y - meanYhat)^2)),
-    xScaled = scaleX,
+    isScaled = scaleX,
     metric = metric
   )
 }
