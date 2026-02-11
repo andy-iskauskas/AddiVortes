@@ -4,9 +4,9 @@
 #include <R_ext/Rdynload.h>
 
 /* .Call calls */
-extern SEXP knnx_index_cpp(SEXP, SEXP, SEXP);
+extern SEXP knnx_index_cpp(SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP calculate_residuals_cpp(SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP propose_tessellation_cpp(SEXP, SEXP, SEXP, SEXP);
+extern SEXP propose_tessellation_cpp(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
 static const R_CallMethodDef CallEntries[] = {
   {"knnx_index_cpp",             (DL_FUNC) &knnx_index_cpp,             5},

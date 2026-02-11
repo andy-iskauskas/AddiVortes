@@ -106,6 +106,7 @@ AddiVortes <- function(y, x, m = 200,
       "Note: Omega (", Omega, ") exceeds number of covariates (", p, "). ",
       "The dimension inclusion probability will be clamped to 100%."
     )
+    Omega <- p - 1
   }
   
   #### Initialise predictions --------------------------------------------------
