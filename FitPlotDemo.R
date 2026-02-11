@@ -3,7 +3,7 @@
 ## Libraries
 #library(AddiVortes)
 library(ggplot2)
-library(plotly)
+library(rgl)
 library(purrr)
 set.seed(69)
 
@@ -145,13 +145,15 @@ tess_choiceS <- which(map_dbl(ncS, ~.[2]) == 2)[which.max(map_dbl(ncS, ~.[1])[wh
 tess_S <- results_weather$posteriorTess[[1800]][[tess_choiceS]]
 
 p_grid_S <- as.matrix(expand.grid(
-  seq(-pi/2, pi/2, length.out = 100),
-  seq(-pi, pi, length.out = 100)
+  seq(-pi/2, pi/2, length.out = 200),
+  seq(-pi, pi, length.out = 200)
 ))
 p_grid_S_plot <- t(apply(p_grid_S, 1, sph_to_xyz))
 cell_member_S <- cellIndices(p_grid_S, tess_S, as.integer(c(1,2)), metric = as.integer(c(1,1)))
-plot_ly(setNames(cbind.data.frame(p_grid_S_plot, as.factor(cell_member_S)), c('x','y','z','cell')),
-        x = ~x, y = ~y, z = ~z, color = ~cell, colors = viridis::viridis(nrow(tess_S)))
+plot_data_S <- cbind.data.frame(p_grid_S_plot, as.factor(cell_member_S)) |> setNames(c('x','y','z','cell'))
+plot3d(x = plot_data_S$x, plot_data_S$y, plot_data_S$z,
+       col = viridis::viridis(nrow(tess_S))[plot_data_S$cell],
+       type = 'p', xlab = 'x', ylab = 'y', zlab = 'z')
 
 ## Cylinder
 cyl_to_xyz <- function(x, r = 1) c(r*cos(x[2]), r*sin(x[2]), x[1])
@@ -165,6 +167,8 @@ p_grid_C <- as.matrix(expand.grid(
 ))
 p_grid_C_plot <- t(apply(p_grid_C, 1, cyl_to_xyz))
 cell_member_C <- cellIndices(p_grid_C, tess_C, as.integer(c(1,2)), metric = as.integer(c(0,1)))
-plot_ly(setNames(cbind.data.frame(p_grid_C_plot, as.factor(cell_member_C)), c('x','y','z','cell')),
-        x = ~x, y = ~y, z = ~z, color = ~cell, colors = viridis::viridis(nrow(tess_C)))
+plot_data_C <- cbind.data.frame(p_grid_C_plot, as.factor(cell_member_C)) |> setNames(c('x','y','z','cell'))
+plot3d(x = plot_data_C$x, plot_data_C$y, plot_data_C$z,
+       col = viridis::viridis(nrow(tess_C))[plot_data_C$cell],
+       type = 'p', xlab = 'x', ylab = 'y', zlab = 'z')
 
