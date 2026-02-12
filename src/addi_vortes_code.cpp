@@ -72,7 +72,10 @@ double spherical_distance(std::vector<double>& p1, std::vector<double>& p2) {
     Rf_error("Points have incompatible dimensions.");
   }
   if (p1.size() == 1) {
-    return (p1[0]-p2[0])*(p1[0]-p2[0]);
+    double a1 = abs(p1[0]-p2[0]);
+    double a2 = 2*M_PI-a1;
+    if (a1 < a2) return(a1*a1);
+    return(a2*a2);
   }
   double angle_diff = cos(p1[p1.size()-1]-p2[p2.size()-1]);
   for (int i = p1.size()-2; i >= 0; --i) {

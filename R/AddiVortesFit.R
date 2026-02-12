@@ -17,7 +17,7 @@
 new_AddiVortes <- function(posteriorTess, posteriorDim, 
                               posteriorSigma, posteriorPred,
                               xCentres, xRanges, yCentre, yRange,
-                              inSampleRmse, isScaled, metric) {
+                              inSampleRmse, metric) {
   structure(
     list(
       posteriorTess = posteriorTess,
@@ -29,7 +29,6 @@ new_AddiVortes <- function(posteriorTess, posteriorDim,
       yCentre = yCentre,
       yRange = yRange,
       inSampleRmse = inSampleRmse,
-      isScaled = isScaled,
       metric = metric
     ),
     class = "AddiVortes"

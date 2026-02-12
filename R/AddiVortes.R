@@ -20,8 +20,7 @@
 #' @param LambdaRate The rate of the Poisson distribution for the number of centres.
 #' @param InitialSigma The method used to calculate the initial variance.
 #' @param thinning The thinning rate.
-#' @param scaleX If TRUE (default), the covariates are scaled to [-0.5, 0.5].
-#' @param metric Either "Euclidean" (default) or "Spherical".
+#' @param metric Either "E" (Euclidean, default) or "S" (Spherical).
 #' @param showProgress Logical; if TRUE, progress bars and messages are shown during fitting.
 #'
 #' @return An AddiVortes object containing the posterior samples of the
@@ -49,7 +48,7 @@ AddiVortes <- function(y, x, m = 200,
                        LambdaRate = 25,
                        InitialSigma = "Linear",
                        thinning = 1,
-                       scaleX = TRUE, metric = "E",
+                       metric = "E",
                        showProgress = interactive()) {
   #### Dealing with choice of metric -------------------------------------------
   if (length(metric) == 1) {
@@ -404,7 +403,6 @@ AddiVortes <- function(y, x, m = 200,
     yCentre = yCentre,
     yRange = yRange,
     inSampleRmse = sqrt(mean((y - meanYhat)^2)),
-    isScaled = scaleX,
     metric = metric
   )
 }

@@ -14,7 +14,6 @@ new_AddiVortes(
   yCentre,
   yRange,
   inSampleRmse,
-  isScaled,
   metric
 )
 }

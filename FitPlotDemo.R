@@ -7,6 +7,8 @@ library(rgl)
 library(purrr)
 set.seed(69)
 
+options(rgl.printRglwidget = TRUE)
+
 ## Helper for plotting the stuff.
 plot_preds <- function(fit, X, Y, preds = NULL) {
   if (is.null(preds))
@@ -92,6 +94,7 @@ results_weather <- AddiVortes(y = Y_weather[samp_W],
                               InitialSigma = "Naive",
                               metric = "S",
 )
+results_weather$inSampleRmse
 ## Prediction
 preds_weather <- predict(results_weather, X_weather[-samp_W,])
 cat("Test Set RMSE:", sqrt(mean((preds_weather-Y_weather[-samp_W])^2)), "\n")
@@ -128,15 +131,15 @@ tess_B <- results_Boston$posteriorTess[[1800]][[tess_choiceB]]
 ## Since using cellIndices directly, scaling doesn't happen so have to scale directly
 p_grid_B <- as.matrix(
   expand.grid(
-    seq(-0.5, 0.5, length.out = 50),
-    seq(-0.5, 0.5, length.out = 50)
+    seq(-0.5, 0.5, length.out = 200),
+    seq(-0.5, 0.5, length.out = 200)
   )
 )
 cell_member_B <- cellIndices(p_grid_B, tess_B, as.integer(c(1,2)), metric = as.integer(c(0,0)))
-ggplot(data = setNames(cbind.data.frame(p_grid_B, cell_member_B), c('x', 'y', 'cell')),
-       aes(x = x, y = y, z = cell)) +
-  geom_contour_filled(breaks = seq(0, 7, by = 1)) +
-  viridis::scale_fill_viridis(discrete = TRUE, labels = 1:6, name = "Cell")
+ggplot(data = setNames(cbind.data.frame(p_grid_B, as.factor(cell_member_B)), c('x', 'y', 'cell')),
+       aes(x = x, y = y, fill = cell)) +
+  geom_raster() +
+  viridis::scale_fill_viridis(discrete = TRUE, labels = seq_len(length(unique(cell_member_B))), name = "Cell")
 
 ## Sphere
 sph_to_xyz <- function(x, r = 1) c(r*cos(x[2])*sin(-x[1]+pi/2), r*sin(x[2])*sin(-x[1]+pi/2), r*cos(-x[1]+pi/2))
@@ -171,4 +174,3 @@ plot_data_C <- cbind.data.frame(p_grid_C_plot, as.factor(cell_member_C)) |> setN
 plot3d(x = plot_data_C$x, plot_data_C$y, plot_data_C$z,
        col = viridis::viridis(nrow(tess_C))[plot_data_C$cell],
        type = 'p', xlab = 'x', ylab = 'y', zlab = 'z')
-

@@ -18,7 +18,6 @@ AddiVortes(
   LambdaRate = 25,
   InitialSigma = "Linear",
   thinning = 1,
-  scaleX = TRUE,
   metric = "E",
   showProgress = interactive()
 )
@@ -50,9 +49,7 @@ AddiVortes(
 
 \item{thinning}{The thinning rate.}
 
-\item{scaleX}{If TRUE (default), the covariates are scaled to \link{-0.5, 0.5}.}
-
-\item{metric}{Either "Euclidean" (default) or "Spherical".}
+\item{metric}{Either "E" (Euclidean, default) or "S" (Spherical).}
 
 \item{showProgress}{Logical; if TRUE, progress bars and messages are shown during fitting.}
 }
