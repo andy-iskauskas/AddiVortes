@@ -41,12 +41,12 @@ std::vector<int> which_elem(int value, const std::vector<int>& vec) {
   return indexes;
 }
 
-double period_shift(double val, double min, double max) {
-  while (val >= max) {
-    val -= max;
+double period_shift(double val, double lim) {
+  while (val >= lim) {
+    val -= 2*lim;
   }
-  while (val < min) {
-    val += max;
+  while (val < -lim) {
+    val += 2*lim;
   }
   return val;
 }
@@ -104,7 +104,6 @@ extern "C" {
   // This function implements k-nearest neighbors index search to replace FNN::knnx.index
   // The R wrapper function is `knnx.index`.
   SEXP knnx_index_cpp(SEXP tess_sexp, SEXP query_sexp, SEXP k_sexp, SEXP dim_sexp, SEXP dist_sexp) {
-    
     // --- Unpack arguments ---
     double* p_tess = REAL(tess_sexp);
     double* p_query = REAL(query_sexp);
@@ -346,11 +345,11 @@ extern "C" {
         new_val = mu[new_dim-1] + norm_rand() * sd[new_dim-1];
         if (metric[new_dim-1] == 1) {
           if (new_dim - 1 == sphere_index[sphere_index.size()-1]) {
-            new_val = period_shift(new_val, -M_PI, M_PI);
+            new_val = period_shift(new_val, M_PI);
           }
-          else {
-            new_val = period_shift(new_val, -M_PI_2, M_PI_2);
-          }
+          // else {
+          //   new_val = period_shift(new_val, M_PI_2);
+          // }
         }
         new_tess[r + d_j_length * tess_j_rows] = new_val;
       }
@@ -379,11 +378,11 @@ extern "C" {
         new_val = mu[i] + norm_rand() * sd[i];
         if (metric[i] == 1) {
           if (i == sphere_index[sphere_index.size()-1]) {
-            new_val = period_shift(new_val, -M_PI, M_PI);
+            new_val = period_shift(new_val, M_PI);
           }
-          else {
-            new_val = period_shift(new_val, -M_PI_2, M_PI_2);
-          }
+          // else {
+          //   new_val = period_shift(new_val, M_PI_2);
+          // }
         }
         tess_j_star.insert(tess_j_star.begin() + (i * (tess_j_rows + 1)) + tess_j_rows, new_val);
       }
@@ -408,11 +407,11 @@ extern "C" {
         new_val = mu[c] + norm_rand() * sd[c];
         if (metric[c] == 1) {
           if (c == sphere_index[sphere_index.size()-1]) {
-            new_val = period_shift(new_val, -M_PI, M_PI);
+            new_val = period_shift(new_val, M_PI);
           }
-          else {
-            new_val = period_shift(new_val, -M_PI_2, M_PI_2);
-          }
+          // else {
+          //   new_val = period_shift(new_val, M_PI_2);
+          // }
         }
         tess_j_star[centre_to_change_idx + c * tess_j_rows] = new_val;
       }
@@ -430,11 +429,11 @@ extern "C" {
         new_val = mu[dim_to_change_idx] + norm_rand() * sd[dim_to_change_idx];
         if (metric[dim_to_change_idx] == 1) {
           if (dim_to_change_idx == sphere_index[sphere_index.size()-1]) {
-            new_val = period_shift(new_val, -M_PI, M_PI);
+            new_val = period_shift(new_val, M_PI);
           }
-          else {
-            new_val = period_shift(new_val, -M_PI_2, M_PI_2);
-          }
+          // else {
+          //   new_val = period_shift(new_val, M_PI_2);
+          // }
         }
         tess_j_star[r + dim_to_change_idx * tess_j_rows] = new_val;
       }
