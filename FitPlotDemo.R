@@ -51,7 +51,7 @@ samp_W <- sort(sample.int(n_weather, 5*n_weather/6))
 
 ## Fake dataset: cylindrical
 ## 400 observations, 2 covariates
-cyl_f <- function(x) sin(x[1]) * cos(x[2]) + x[1] * sin(x[2])^2
+cyl_f <- function(x) sin(x[1]) * cos(x[2]) + x[1] * sin(x[2])^2 + rnorm(1, 0, 1)
 X_cyl <- as.matrix(data.frame(z = runif(400, 0, 10), th = runif(400, -pi, pi)))
 Y_cyl <- apply(X_cyl, 1, cyl_f)
 n_cyl <- length(Y_cyl)
@@ -144,7 +144,9 @@ ggplot(data = setNames(cbind.data.frame(p_grid_B, as.factor(cell_member_B)), c('
 ## Sphere
 sph_to_xyz <- function(x, r = 1) c(r*cos(x[2])*sin(-x[1]+pi/2), r*sin(x[2])*sin(-x[1]+pi/2), r*cos(-x[1]+pi/2))
 ncS <- map(results_weather$posteriorTess[[1800]], dim)
-tess_choiceS <- which(map_dbl(ncS, ~.[2]) == 2)[which.max(map_dbl(ncS, ~.[1])[which(map_dbl(ncS, ~.[2])==2)])]
+## Choose how many covariates to have in the plotted tessellation
+ndimS <- 2
+tess_choiceS <- which(map_dbl(ncS, ~.[2]) == ndimS)[which.max(map_dbl(ncS, ~.[1])[which(map_dbl(ncS, ~.[2])==ndimS)])]
 tess_S <- results_weather$posteriorTess[[1800]][[tess_choiceS]]
 
 p_grid_S <- as.matrix(expand.grid(
@@ -152,7 +154,7 @@ p_grid_S <- as.matrix(expand.grid(
   seq(-pi, pi, length.out = 200)
 ))
 p_grid_S_plot <- t(apply(p_grid_S, 1, sph_to_xyz))
-cell_member_S <- cellIndices(p_grid_S, tess_S, as.integer(c(1,2)), metric = as.integer(c(1,1)))
+cell_member_S <- cellIndices(p_grid_S, tess_S, as.integer(results_weather$posteriorDim[[1800]][[tess_choiceS]]), metric = as.integer(c(1,1)))
 plot_data_S <- cbind.data.frame(p_grid_S_plot, as.factor(cell_member_S)) |> setNames(c('x','y','z','cell'))
 plot3d(x = plot_data_S$x, plot_data_S$y, plot_data_S$z,
        col = viridis::viridis(nrow(tess_S))[plot_data_S$cell],
@@ -161,7 +163,8 @@ plot3d(x = plot_data_S$x, plot_data_S$y, plot_data_S$z,
 ## Cylinder
 cyl_to_xyz <- function(x, r = 1) c(r*cos(x[2]), r*sin(x[2]), x[1])
 ncC <- map(results_cylinder$posteriorTess[[1800]], dim)
-tess_choiceC <- which(map_dbl(ncC, ~.[2]) == 2)[which.max(map_dbl(ncC, ~.[1])[which(map_dbl(ncC, ~.[2])==2)])]
+ndimC <- 2
+tess_choiceC <- which(map_dbl(ncC, ~.[2]) == ndimC)[which.max(map_dbl(ncC, ~.[1])[which(map_dbl(ncC, ~.[2])==ndimC)])]
 tess_C <- results_cylinder$posteriorTess[[1800]][[tess_choiceC]]
 
 p_grid_C <- as.matrix(expand.grid(
@@ -169,7 +172,7 @@ p_grid_C <- as.matrix(expand.grid(
   seq(-pi, pi, length.out = 200)
 ))
 p_grid_C_plot <- t(apply(p_grid_C, 1, cyl_to_xyz))
-cell_member_C <- cellIndices(p_grid_C, tess_C, as.integer(c(1,2)), metric = as.integer(c(0,1)))
+cell_member_C <- cellIndices(p_grid_C, tess_C, as.integer(results_cylinder$posteriorDim[[1800]][[tess_choiceC]]), metric = as.integer(c(0,1)))
 plot_data_C <- cbind.data.frame(p_grid_C_plot, as.factor(cell_member_C)) |> setNames(c('x','y','z','cell'))
 plot3d(x = plot_data_C$x, plot_data_C$y, plot_data_C$z,
        col = viridis::viridis(nrow(tess_C))[plot_data_C$cell],
