@@ -1,0 +1,162 @@
+# AddiVortes: Bayesian Additive Voronoi Tessellations
+
+## Overview
+
+AddiVortes implements the **Bayesian Additive Voronoi Tessellation**
+model for machine learning regression and non-parametric statistical
+modeling. This R package provides a flexible alternative to **BART
+(Bayesian Additive Regression Trees)**, using Voronoi tessellations
+instead of trees for spatial partitioning.
+
+## Key Features
+
+- **Machine Learning Regression**: Advanced Bayesian regression modeling
+  for complex datasets
+- **Alternative to BART**: Uses Voronoi tessellations instead of trees
+  for more flexible spatial modeling
+- **Spatial Data Analysis**: Excellent for geographic and spatial
+  datasets
+- **Non-parametric Modeling**: No assumptions about functional form
+- **Bayesian Framework**: Full posterior inference with uncertainty
+  quantification
+- **Complex Function Approximation**: Captures non-linear relationships
+  and interactions
+
+## Applications
+
+AddiVortes is particularly well-suited for:
+
+- **Spatial regression** and geographic data analysis
+- **Machine learning** tasks requiring interpretable models
+- **Non-parametric regression** where the functional form is unknown
+- **Bayesian modeling** with uncertainty quantification
+- **Complex surface modeling** and function approximation
+- **Alternative to BART** for researchers seeking different ensemble
+  approaches
+
+## Installation
+
+You can install the latest version of AddiVortes from GitHub with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("johnpaulgosling/AddiVortes", 
+                         build_vignettes = TRUE)
+```
+
+## Quick Start
+
+``` r
+library(AddiVortes)
+
+# Load your data
+# X <- your_predictors
+# y <- your_response
+
+# Fit the AddiVortes model
+# model <- AddiVortes(X, y)
+
+# Make predictions
+# predictions <- predict(model, newdata = X_test)
+```
+
+## Documentation
+
+- [Getting Started
+  Guide](https://johnpaulgosling.github.io/AddiVortes/articles/introduction.html)
+- [Prediction
+  Examples](https://johnpaulgosling.github.io/AddiVortes/articles/prediction.html)
+- [Function
+  Reference](https://johnpaulgosling.github.io/AddiVortes/reference/)
+
+## Comparison with BART
+
+While **BART (Bayesian Additive Regression Trees)** uses tree-based
+partitioning, **AddiVortes** uses Voronoi tessellations, which can
+provide:
+
+- More natural spatial partitioning
+- Flexible geometric boundaries
+- Alternative ensemble approach for machine learning
+- Enhanced performance on spatial data
+
+## Cite Us
+
+If you use this package in your research, please cite:
+
+``` r
+citation("AddiVortes")
+```
+
+## References
+
+Stone, A. and Gosling, J.P. (2025). AddiVortes: (Bayesian) additive
+Voronoi tessellations. Journal of Computational and Graphical
+Statistics.
+
+## Keywords
+
+Bayesian machine learning, BART alternative, Voronoi tessellation,
+spatial regression, non-parametric regression, ensemble methods,
+statistical modeling, R package
+
+# Package index
+
+## Package Overview
+
+Package documentation and overview
+
+- [`AddiVortes-package`](https://johnpaulgosling.github.io/AddiVortes/reference/AddiVortes-package.md)
+  : AddiVortes: Bayesian Additive Voronoi Tessellations for Machine
+  Learning
+
+## Main Functions
+
+Core functions for fitting AddiVortes models
+
+- [`AddiVortes()`](https://johnpaulgosling.github.io/AddiVortes/reference/AddiVortes.md)
+  : AddiVortes
+
+## S3 Methods
+
+Methods for AddiVortes objects
+
+- [`plot(`*`<AddiVortes>`*`)`](https://johnpaulgosling.github.io/AddiVortes/reference/plot.AddiVortes.md)
+  : Plot Method for AddiVortes
+- [`predict(`*`<AddiVortes>`*`)`](https://johnpaulgosling.github.io/AddiVortes/reference/predict.AddiVortes.md)
+  : Predict Method for AddiVortes
+- [`print(`*`<AddiVortes>`*`)`](https://johnpaulgosling.github.io/AddiVortes/reference/print.AddiVortes.md)
+  : Print Method for AddiVortes
+- [`summary(`*`<AddiVortes>`*`)`](https://johnpaulgosling.github.io/AddiVortes/reference/summary.AddiVortes.md)
+  : Summary Method for AddiVortes
+
+## Datasets
+
+- [`Boston`](https://johnpaulgosling.github.io/AddiVortes/reference/Boston.md)
+  : Boston Dataset
+- [`Cylinder`](https://johnpaulgosling.github.io/AddiVortes/reference/Cylinder.md)
+  : Cylindrical Dataset
+- [`Weather`](https://johnpaulgosling.github.io/AddiVortes/reference/Weather.md)
+  : Weather Dataset
+
+## Utilities
+
+Helper functions and constructors
+
+- [`new_AddiVortes()`](https://johnpaulgosling.github.io/AddiVortes/reference/new_AddiVortes.md)
+  : Create an AddiVortes Object
+- [`cellIndices()`](https://johnpaulgosling.github.io/AddiVortes/reference/cellIndices.md)
+  : Assign Observations to Tessellation Cells
+
+# Articles
+
+### All vignettes
+
+- [Using Categorical Covariates with
+  AddiVortes](https://johnpaulgosling.github.io/AddiVortes/articles/categorical.md):
+- [Machine Learning with AddiVortes: A Bayesian Alternative to
+  BART](https://johnpaulgosling.github.io/AddiVortes/articles/introduction.md):
+- [Bayesian Regression and Prediction with
+  AddiVortes](https://johnpaulgosling.github.io/AddiVortes/articles/prediction.md):
+- [Modelling Spherical Data with
+  AddiVortes](https://johnpaulgosling.github.io/AddiVortes/articles/spherical.md):
