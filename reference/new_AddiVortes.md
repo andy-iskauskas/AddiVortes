@@ -16,6 +16,7 @@ new_AddiVortes(
   yRange,
   inSampleRmse,
   metric = "E",
+  members = rep(1, length(xCentres)),
   catEncoding = NULL
 )
 ```
@@ -61,6 +62,10 @@ new_AddiVortes(
 - metric:
 
   The metric used for scaling covariates (default "E" for Euclidean).
+
+- members:
+
+  The membership vector for the covariates
 
 - catEncoding:
 
