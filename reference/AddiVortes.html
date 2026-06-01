@@ -78,6 +78,7 @@ polar angle: i.e. that with range 0 to 2*pi.</p>
 <span>  InitialSigma <span class="op">=</span> <span class="st">"Linear"</span>,</span>
 <span>  thinning <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  metric <span class="op">=</span> <span class="st">"E"</span>,</span>
+<span>  members <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  catScaling <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  showProgress <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/interactive.html" class="external-link">interactive</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -143,7 +144,12 @@ adding a dimension.</p></dd>
 
 
 <dt id="arg-metric">metric<a class="anchor" aria-label="anchor" href="#arg-metric"></a></dt>
-<dd><p>Either "E" (Euclidean, default) or "S" (Spherical).</p></dd>
+<dd><p>Either "E" (Euclidean, default), "S" (Spherical), or "C" (Categorical).</p></dd>
+
+
+<dt id="arg-members">members<a class="anchor" aria-label="anchor" href="#arg-members"></a></dt>
+<dd><p>If needed, indicates membership of covariates into different
+subspaces (needed if using multiple spheres in covariate space). Default <code>NULL</code>.</p></dd>
 
 
 <dt id="arg-catscaling">catScaling<a class="anchor" aria-label="anchor" href="#arg-catscaling"></a></dt>
