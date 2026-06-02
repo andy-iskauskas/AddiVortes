@@ -6,7 +6,7 @@ each observation belongs to based on nearest neighbour classification.
 ## Usage
 
 ``` r
-cellIndices(x, tess, dim, metric = "Euclidean", members)
+cellIndices(x, tess, dim, metric = "E", members)
 ```
 
 ## Arguments
